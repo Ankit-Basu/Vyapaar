@@ -45,7 +45,7 @@ DOMAIN_LEXICON: dict[str, tuple[str, ...]] = {
     "cancelling": ("anc", "cancellation"),
     "canceling": ("anc", "cancellation"),
     "anc": ("noise", "cancellation", "headphones"),
-    "keyboard": ("keyboard", "mechanical", "keys"),
+    "keyboard": ("keyboard", "mechanical", "typing"),
     "mouse": ("mouse", "optical", "pointer"),
     "mice": ("mouse", "optical"),
     "charger": ("charger", "charging", "watts", "gan"),

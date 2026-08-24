@@ -12,7 +12,10 @@
         "buyer_id": "buyer_asha",
         "per_txn_cap_paise": 300000,
         "total_budget_paise": 1000000,
-        "allowed_categories": ["electronics", "office"],
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
@@ -25,19 +28,22 @@
       "id": "budget_exceeded",
       "title": "Budget exhausted, agent re-plans",
       "proves": "graceful failure",
-      "narrative": "The mandate carries a deliberately tight budget. The agent buys once, then goes after a second, pricier item that no longer fits. The guardrails deny it with the exact arithmetic, the agent reads which check failed, re-searches under the money that actually remains, and buys a cheaper alternative instead of retrying blindly.",
+      "narrative": "The mandate allows INR 5,000 total with an INR 4,500 per-transaction cap. The agent buys a mouse for INR 1,299, leaving INR 3,701. A purchase is then attempted for the INR 4,499 mechanical keyboard: it clears the per-transaction cap with INR 1 to spare, but breaches what is actually left, so the budget guardrail denies it and names the exact shortfall. The agent re-searches under the remaining budget and buys the INR 2,499 wireless keyboard instead.",
       "expected_outcome": "denied then recovered",
       "mandate": {
         "buyer_id": "buyer_asha",
-        "per_txn_cap_paise": 300000,
-        "total_budget_paise": 200000,
-        "allowed_categories": ["electronics", "office"],
+        "per_txn_cap_paise": 450000,
+        "total_budget_paise": 500000,
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
-        "policy.decision audit row with action DENY and the shortfall in rupees",
-        "Agent step 'replan' naming the remaining budget as the new ceiling",
-        "Second purchase clears and settles"
+        "per_txn_cap PASSes and budget_remaining FAILs - the two bounds are distinct",
+        "The denial states the shortfall in rupees, not just 'insufficient funds'",
+        "The agent comes back with a cheaper keyboard rather than retrying the same one"
       ]
     },
     {
@@ -50,7 +56,9 @@
         "buyer_id": "buyer_asha",
         "per_txn_cap_paise": 900000,
         "total_budget_paise": 1500000,
-        "allowed_categories": ["electronics"],
+        "allowed_categories": [
+          "electronics"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
@@ -69,7 +77,10 @@
         "buyer_id": "buyer_asha",
         "per_txn_cap_paise": 300000,
         "total_budget_paise": 1000000,
-        "allowed_categories": ["electronics", "office"],
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
@@ -81,18 +92,22 @@
       "id": "out_of_stock",
       "title": "Out of stock mid-flow",
       "proves": "graceful failure",
-      "narrative": "The Aurora Silent Click Mouse is driven to zero stock, then the agent is asked for a quiet wireless mouse. The stock guardrail refuses the sale rather than charging for something the merchant cannot ship, and the agent re-searches and offers an in-stock alternative.",
+      "narrative": "The agent searches for a wireless mouse while it is in stock, and the last unit sells to someone else before the intent is raised. The stock guardrail refuses the sale rather than charging for something the merchant cannot ship. The agent reads the failed check, excludes that product and re-searches inside the same run, offering an in-stock alternative.",
       "expected_outcome": "recovered",
       "mandate": {
         "buyer_id": "buyer_asha",
         "per_txn_cap_paise": 300000,
         "total_budget_paise": 1000000,
-        "allowed_categories": ["electronics", "office"],
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
-        "stock_available check FAILs with the exact stock count",
-        "Agent step 'replan' excludes the dead product and finds another"
+        "stock_available FAILs with the exact count, mid-run",
+        "An agent step 'replan' excludes the dead product and searches again",
+        "The run still ends in a completed purchase"
       ]
     },
     {
@@ -105,7 +120,10 @@
         "buyer_id": "buyer_asha",
         "per_txn_cap_paise": 300000,
         "total_budget_paise": 1000000,
-        "allowed_categories": ["electronics", "office"],
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [
@@ -123,7 +141,9 @@
         "buyer_id": "buyer_mallory",
         "per_txn_cap_paise": 100000,
         "total_budget_paise": 200000,
-        "allowed_categories": ["electronics"],
+        "allowed_categories": [
+          "electronics"
+        ],
         "ttl_hours": 24
       },
       "watch_for": [

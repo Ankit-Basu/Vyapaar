@@ -42,6 +42,8 @@ MOUSE = "prod_elec_001"
 SILENT_MOUSE = "prod_elec_002"
 HEADPHONES = "prod_elec_005"
 KEYBOARD = "prod_elec_003"
+WIRELESS_KEYBOARD = "prod_elec_004"
+VERTICAL_MOUSE = "prod_elec_011"
 YOGA_MAT = "prod_fit_001"
 
 
@@ -121,38 +123,69 @@ def _scenario_happy_path(spec: dict[str, Any]) -> ScenarioResult:
 
 
 def _scenario_budget_exceeded(spec: dict[str, Any]) -> ScenarioResult:
-    """The headline failure case: deny on budget, then recover on a cheaper item."""
+    """The headline failure case: denied on budget, then a cheaper purchase clears."""
     token, mandate_id = _issue(spec, "demo: tight budget")
     catalog.set_stock(MOUSE, 42)
     catalog.set_stock(KEYBOARD, 15)
+    catalog.set_stock(WIRELESS_KEYBOARD, 28)
 
     first = _run_agent("buy a wireless mouse under 1500", token)
-    # INR 2,000 budget, INR 1,299 already gone: the INR 4,499 keyboard cannot fit,
-    # and the agent has to notice that and come back with something cheaper.
-    second = _run_agent("buy a mechanical keyboard for my desk", token)
+
+    # Go at the INR 4,499 keyboard by id. It clears the INR 5,000 per-transaction
+    # cap, so the *budget* check is what refuses it -- which is the point.
+    over_budget = intents.create_intent(
+        PurchaseIntentRequest(
+            mandate_token=token,
+            product_id=KEYBOARD,
+            qty=1,
+            agent_rationale="Best-reviewed mechanical keyboard in the catalog.",
+        )
+    )
+    denial = next((c for c in over_budget.decision.checks if c.status.value == "fail"), None)
+    cap_check = next((c for c in over_budget.decision.checks if c.id == "per_txn_cap"), None)
+
+    # Now the agent re-plans against what is actually left and buys the cheaper one.
+    recovery = _run_agent("buy a mechanical keyboard", token)
 
     mandate = mandates.get_record(mandate_id)
-    denied_then_recovered = any(step["action"] == "replan" for step in second["steps"])
     return ScenarioResult(
         scenario_id=spec["id"],
         title=spec["title"],
         proves=spec["proves"],
-        outcome=second["outcome"],
+        outcome=recovery["outcome"],
         summary=(
-            f"First purchase settled. Second purchase was denied on budget"
-            + (" and the agent re-planned under the remaining budget. " if denied_then_recovered else ". ")
-            + second["message"]
+            f"Mouse settled at {_inr(first_amount(first))}. "
+            f"The keyboard then cleared the per-transaction cap "
+            f"({cap_check.status.value if cap_check else '?'}) but was denied on budget: "
+            f"{denial.reason if denial else 'no denial recorded'} "
+            f"The agent re-planned and {recovery['message']}"
             + (
-                f" Mandate: {_inr(mandate.spent_paise)} spent, {_inr(mandate.available_paise)} left."
+                f" Mandate: {_inr(mandate.spent_paise)} spent of {_inr(mandate.total_budget_paise)}, "
+                f"{_inr(mandate.available_paise)} left."
                 if mandate
                 else ""
             )
         ),
         mandate_id=mandate_id,
         mandate_token=token,
-        steps=[first, second],
-        audit_tail=_audit_tail(30),
+        steps=[
+            first,
+            {
+                "over_budget_attempt": over_budget.decision.model_dump(),
+                "intent_id": over_budget.intent.intent_id,
+            },
+            recovery,
+        ],
+        audit_tail=_audit_tail(35),
     )
+
+
+def first_amount(run: dict[str, Any]) -> int:
+    """Amount settled by an agent run, for the scenario summary."""
+    for step in run.get("steps", []):
+        if step["action"] == "select":
+            return int(step["detail"].get("price_paise", 0))
+    return 0
 
 
 def _scenario_human_gate(spec: dict[str, Any]) -> ScenarioResult:
@@ -223,35 +256,42 @@ def _scenario_category_blocked(spec: dict[str, Any]) -> ScenarioResult:
 
 
 def _scenario_out_of_stock(spec: dict[str, Any]) -> ScenarioResult:
+    """A genuine mid-flow race: the item sells out between search and intent."""
     token, mandate_id = _issue(spec, "demo: out of stock")
-    catalog.set_stock(SILENT_MOUSE, 0)
-    catalog.set_stock(MOUSE, 42)
+    catalog.set_stock(MOUSE, 1)  # the last unit
+    catalog.set_stock(VERTICAL_MOUSE, 18)
 
-    # Go at the dead product directly so the stock guardrail is what refuses it.
-    direct = intents.create_intent(
-        PurchaseIntentRequest(
-            mandate_token=token,
-            product_id=SILENT_MOUSE,
-            qty=1,
-            agent_rationale="Cheapest quiet wireless mouse in the catalog.",
-        )
-    )
-    recovery = _run_agent("buy a quiet wireless mouse", token)
+    sold_out: dict[str, Any] = {}
+
+    def someone_else_buys_it(choice: Any) -> None:
+        """Fires after the agent picks, before it raises the intent."""
+        if not sold_out:
+            catalog.set_stock(choice.product.id, 0)
+            sold_out["product_id"] = choice.product.id
+            sold_out["title"] = choice.product.title
+
+    run = buyer.run_goal(
+        goal="buy a wireless mouse under 2000",
+        mandate_token=token,
+        auto_pay=True,
+        before_intent=someone_else_buys_it,
+    ).model_dump()
+
+    replanned = any(step["action"] == "replan" for step in run["steps"])
     return ScenarioResult(
         scenario_id=spec["id"],
         title=spec["title"],
         proves=spec["proves"],
-        outcome=recovery["outcome"],
+        outcome=run["outcome"],
         summary=(
-            f"{direct.decision.reasons[0] if direct.decision.reasons else 'Denied on stock.'} "
-            f"The agent then re-searched: {recovery['message']}"
+            f"The agent chose {sold_out.get('title', '?')}, and its last unit sold to someone "
+            f"else before the intent was raised. The stock guardrail refused the sale"
+            + (" and the agent re-searched mid-run. " if replanned else ". ")
+            + run["message"]
         ),
         mandate_id=mandate_id,
         mandate_token=token,
-        steps=[
-            {"direct_attempt": direct.decision.model_dump(), "intent_id": direct.intent.intent_id},
-            recovery,
-        ],
+        steps=[run],
         audit_tail=_audit_tail(30),
     )
 

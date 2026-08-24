@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .audit.broadcaster import broadcaster
+from .agent.router import router as agent_router
 from .audit.router import router as audit_router
 from .catalog import store as catalog
 from .catalog.router import router as catalog_router
@@ -90,6 +91,7 @@ for router in (
     intents_router,
     payments_router,
     audit_router,
+    agent_router,
     demo_router,
 ):
     app.include_router(router)

@@ -16,6 +16,7 @@ once and then stops with a clear explanation rather than hammering the merchant.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -39,6 +40,12 @@ from .llm import LLMUnavailable, describe_llm, get_llm
 log = logging.getLogger("agentmandi.agent.buyer")
 
 MAX_ATTEMPTS = 2
+
+# An agent that cannot buy what was asked for should say so, not quietly buy
+# something else. If the closest purchasable item is far less relevant than the
+# best match overall, or barely relevant at all, the agent declines instead.
+RELEVANCE_FLOOR = 0.15
+SUBSTITUTION_RATIO = 0.5
 
 
 def _inr(paise: int) -> str:
@@ -156,33 +163,57 @@ class BuyerAgent:
 
     # -- selection --------------------------------------------------------
 
+    @staticmethod
+    def _why_blocked(hit: ScoredProduct, mandate: MandateRecord) -> str:
+        if not hit.product.in_stock:
+            return f"{hit.product.title} is out of stock"
+        if hit.product.category not in mandate.allowed_categories:
+            return (
+                f"{hit.product.title} is in the '{hit.product.category}' category, which this "
+                f"mandate does not authorise (it allows {mandate.allowed_categories})"
+            )
+        if hit.product.price_paise > mandate.per_txn_cap_paise:
+            return (
+                f"{hit.product.title} at {_inr(hit.product.price_paise)} is over the "
+                f"{_inr(mandate.per_txn_cap_paise)} per-transaction cap"
+            )
+        return f"{hit.product.title} is not purchasable under this mandate"
+
     def _select(
         self, goal: str, hits: list[ScoredProduct], mandate: MandateRecord, plan: _Plan
     ) -> tuple[ScoredProduct | None, str]:
+        considered = [hit for hit in hits if hit.product.id not in plan.exclude_product_ids]
         eligible = [
             hit
-            for hit in hits
-            if hit.product.id not in plan.exclude_product_ids
-            and hit.product.in_stock
+            for hit in considered
+            if hit.product.in_stock
             and hit.product.category in mandate.allowed_categories
             and hit.product.price_paise <= mandate.per_txn_cap_paise
         ]
+
         if not eligible:
-            blocked = [h for h in hits if h.product.id not in plan.exclude_product_ids]
-            if not blocked:
+            if not considered:
                 return None, "The catalog returned nothing that matches this goal."
-            reasons = []
-            for hit in blocked[:3]:
-                if not hit.product.in_stock:
-                    reasons.append(f"{hit.product.title} is out of stock")
-                elif hit.product.category not in mandate.allowed_categories:
-                    reasons.append(f"{hit.product.title} is in the unauthorised '{hit.product.category}' category")
-                elif hit.product.price_paise > mandate.per_txn_cap_paise:
-                    reasons.append(
-                        f"{hit.product.title} at {_inr(hit.product.price_paise)} is over the "
-                        f"{_inr(mandate.per_txn_cap_paise)} per-transaction cap"
-                    )
-            return None, "Nothing here is buyable under this mandate: " + "; ".join(reasons) + "."
+            blocked = "; ".join(self._why_blocked(hit, mandate) for hit in considered[:3])
+            return None, f"Nothing here is buyable under this mandate: {blocked}."
+
+        best = eligible[0]
+        top = considered[0]
+
+        # Guard against buying something only tangentially related to the request.
+        if best.score < RELEVANCE_FLOOR:
+            return None, (
+                f"Nothing in this merchant's catalog is a close enough match for '{goal}'. "
+                f"The best I found was {best.product.title}, which is only loosely related, "
+                "so I have not spent anything."
+            )
+        if top.product.id != best.product.id and best.score < top.score * SUBSTITUTION_RATIO:
+            return None, (
+                f"The closest match to '{goal}' is {top.product.title}, but "
+                f"{self._why_blocked(top, mandate)}. The nearest thing I am allowed to buy is "
+                f"{best.product.title}, which is a poor substitute, so I have not bought it. "
+                "Widen the mandate or pick something else."
+            )
 
         if self._llm is not None:
             try:
@@ -190,7 +221,6 @@ class BuyerAgent:
             except LLMUnavailable as exc:
                 log.warning("LLM selection failed (%s); falling back to ranked order", exc)
 
-        best = eligible[0]
         return best, (
             f"Top-ranked match at {_inr(best.product.price_paise)}, in stock, inside the "
             f"{_inr(mandate.per_txn_cap_paise)} per-transaction cap. Retrieval said: {best.rationale}"
@@ -236,8 +266,19 @@ class BuyerAgent:
     # -- the run ----------------------------------------------------------
 
     def run(
-        self, *, goal: str, mandate_token: str, auto_pay: bool = True
+        self,
+        *,
+        goal: str,
+        mandate_token: str,
+        auto_pay: bool = True,
+        before_intent: Callable[[ScoredProduct], None] | None = None,
     ) -> AgentRunResult:
+        """Run the agent to completion.
+
+        `before_intent` is a test seam: it fires after a product is chosen but
+        before the intent is raised, which is where the demo stages a concurrent
+        stock-out. Nothing in production passes it.
+        """
         settings = get_settings()
         steps: list[AgentStep] = []
         step_no = 0
@@ -326,6 +367,9 @@ class BuyerAgent:
                 f"Choosing {choice.product.title} at {_inr(choice.product.price_paise)}. {rationale}",
                 {"product_id": choice.product.id, "price_paise": choice.product.price_paise},
             )
+
+            if before_intent is not None:
+                before_intent(choice)
 
             response = intents.create_intent(
                 PurchaseIntentRequest(
@@ -476,5 +520,16 @@ class BuyerAgent:
         )
 
 
-def run_goal(*, goal: str, mandate_token: str, auto_pay: bool = True) -> AgentRunResult:
-    return BuyerAgent().run(goal=goal, mandate_token=mandate_token, auto_pay=auto_pay)
+def run_goal(
+    *,
+    goal: str,
+    mandate_token: str,
+    auto_pay: bool = True,
+    before_intent: Callable[[ScoredProduct], None] | None = None,
+) -> AgentRunResult:
+    return BuyerAgent().run(
+        goal=goal,
+        mandate_token=mandate_token,
+        auto_pay=auto_pay,
+        before_intent=before_intent,
+    )
