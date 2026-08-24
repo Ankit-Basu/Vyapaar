@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/*
+ * AgentMandi control room.
+ *
+ * A single dark palette rather than a light/dark pair: this is a live operations
+ * view meant to be projected during a demo, and a consistent surface keeps the
+ * status colours (pass / gate / fail) reading the same in every room.
+ */
+
+@theme {
+  --color-ink-950: #070a10;
+  --color-ink-900: #0b1017;
+  --color-ink-850: #101724;
+  --color-ink-800: #141c2b;
+  --color-ink-700: #1c2637;
+  --color-ink-600: #273248;
+  --color-ink-500: #3a4761;
+
+  --color-mute-500: #64748b;
+  --color-mute-400: #8195b0;
+  --color-mute-300: #a7b8cf;
+  --color-mute-100: #e6edf7;
+
+  --color-brand-500: #4f8cff;
+  --color-brand-400: #6ea1ff;
+  --color-brand-glow: #4f8cff26;
+
+  --color-pass-500: #34c07f;
+  --color-pass-bg: #34c07f1f;
+  --color-gate-500: #f0b429;
+  --color-gate-bg: #f0b4291f;
+  --color-fail-500: #f2626b;
+  --color-fail-bg: #f2626b1f;
+  --color-skip-500: #5c6b82;
+  --color-skip-bg: #5c6b8214;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-ink-950);
+  color: var(--color-mute-100);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin scrollbars so the dense panels do not lose width to chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* New audit rows arrive at the top of the feed; a brief flash marks them. */
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    background-color: var(--color-brand-glow);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-arrive {
+  animation: arrive 420ms ease-out;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-arrive,
+  .animate-pulse-dot {
+    animation: none;
+  }
+}
