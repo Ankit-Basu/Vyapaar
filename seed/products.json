@@ -1,0 +1,339 @@
+{
+  "schema_version": "agentmandi.catalog.v1",
+  "merchant_id": "merch_kirana_labs",
+  "merchant_name": "Kirana Labs Pvt Ltd",
+  "currency": "INR",
+  "note": "Deterministic demo catalog. All prices are integer paise (100 paise = INR 1).",
+  "products": [
+    {
+      "id": "prod_elec_001",
+      "title": "Aurora Wireless Optical Mouse",
+      "description": "Compact 2.4GHz wireless mouse with a silent-tracking optical sensor, ambidextrous shell and a single AA cell that lasts most of a year. Plug the nano receiver in and it works with no driver install.",
+      "category": "electronics",
+      "price_paise": 129900,
+      "currency": "INR",
+      "stock": 42,
+      "attributes": { "connectivity": "2.4GHz wireless", "dpi": 1600, "buttons": 6, "battery_life_hours": 4300, "weight_grams": 78, "colour": "graphite", "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_002",
+      "title": "Aurora Silent Click Mouse",
+      "description": "Budget wireless mouse tuned for shared offices and late-night desks. The micro switches are damped so clicks stay under 25 decibels while keeping a crisp tactile break.",
+      "category": "electronics",
+      "price_paise": 89900,
+      "currency": "INR",
+      "stock": 0,
+      "attributes": { "connectivity": "2.4GHz wireless", "dpi": 1200, "buttons": 3, "noise_db": 25, "weight_grams": 65, "colour": "white", "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_003",
+      "title": "Nimbus TKL Mechanical Keyboard",
+      "description": "Tenkeyless mechanical keyboard with hot-swappable tactile brown switches, double-shot PBT keycaps and a detachable braided USB-C cable. No RGB and no software, just a keyboard.",
+      "category": "electronics",
+      "price_paise": 449900,
+      "currency": "INR",
+      "stock": 15,
+      "attributes": { "connectivity": "USB-C wired", "layout": "TKL 87-key", "switch_type": "tactile brown", "hot_swappable": true, "keycap_material": "PBT double-shot", "warranty_months": 24 }
+    },
+    {
+      "id": "prod_elec_004",
+      "title": "Nimbus Wireless Keyboard",
+      "description": "Low-profile scissor-switch wireless keyboard that pairs with three devices over Bluetooth and switches between them with a dedicated key. Rechargeable over USB-C.",
+      "category": "electronics",
+      "price_paise": 249900,
+      "currency": "INR",
+      "stock": 28,
+      "attributes": { "connectivity": "Bluetooth 5.1 multipoint", "layout": "full-size 104-key", "switch_type": "scissor", "paired_devices": 3, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_005",
+      "title": "Kestrel Pro ANC Headphones",
+      "description": "Flagship over-ear headphones with hybrid active noise cancellation, 40mm drivers and forty hours of playback. Ships with a hard case and a wired fallback cable for flights.",
+      "category": "electronics",
+      "price_paise": 799900,
+      "currency": "INR",
+      "stock": 9,
+      "attributes": { "connectivity": "Bluetooth 5.3 + 3.5mm", "driver_mm": 40, "anc": true, "battery_life_hours": 40, "codec_support": "AAC, LDAC", "warranty_months": 24 }
+    },
+    {
+      "id": "prod_elec_006",
+      "title": "Kestrel Wired Earphones",
+      "description": "In-ear wired earphones with an inline mic and a tangle-resistant flat cable. Tuned slightly warm for long calls rather than for bass.",
+      "category": "electronics",
+      "price_paise": 59900,
+      "currency": "INR",
+      "stock": 120,
+      "attributes": { "connectivity": "3.5mm wired", "driver_mm": 10, "inline_mic": true, "cable_length_cm": 120, "warranty_months": 6 }
+    },
+    {
+      "id": "prod_elec_007",
+      "title": "Volt 65W GaN Fast Charger",
+      "description": "Two-port gallium nitride charger that fits an Indian wall socket without blocking the neighbouring plug. Delivers 65W to a laptop or splits across a phone and a laptop.",
+      "category": "electronics",
+      "price_paise": 189900,
+      "currency": "INR",
+      "stock": 55,
+      "attributes": { "output_watts": 65, "ports": "USB-C x1, USB-A x1", "technology": "GaN III", "protocols": "PD 3.0, QC 4+", "warranty_months": 18 }
+    },
+    {
+      "id": "prod_elec_008",
+      "title": "Volt 10000mAh Power Bank",
+      "description": "Pocketable 10000mAh power bank with 22.5W pass-through charging and a small OLED readout for the exact remaining percentage. Airline-safe capacity.",
+      "category": "electronics",
+      "price_paise": 149900,
+      "currency": "INR",
+      "stock": 73,
+      "attributes": { "capacity_mah": 10000, "output_watts": 22.5, "pass_through": true, "display": "OLED percentage", "weight_grams": 210, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_009",
+      "title": "Lumen 1080p Streaming Webcam",
+      "description": "1080p60 webcam with a real glass lens, dual noise-cancelling mics and a physical privacy shutter that slides over the sensor rather than switching it off in software.",
+      "category": "electronics",
+      "price_paise": 279900,
+      "currency": "INR",
+      "stock": 21,
+      "attributes": { "resolution": "1920x1080", "fps": 60, "field_of_view_deg": 78, "privacy_shutter": true, "mics": 2, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_010",
+      "title": "Cascade 7-in-1 USB-C Hub",
+      "description": "Aluminium USB-C hub with HDMI 4K60, gigabit ethernet, two USB-A ports, SD and microSD readers and 100W power passthrough for the host laptop.",
+      "category": "electronics",
+      "price_paise": 219900,
+      "currency": "INR",
+      "stock": 34,
+      "attributes": { "ports": 7, "hdmi": "4K@60Hz", "ethernet": "1Gbps", "power_delivery_watts": 100, "material": "anodised aluminium", "warranty_months": 12 }
+    },
+    {
+      "id": "prod_elec_011",
+      "title": "Aurora Vertical Ergonomic Mouse",
+      "description": "Wireless vertical mouse that holds the wrist at 57 degrees to take load off the forearm. Recommended for anyone spending the whole day on a trackpad.",
+      "category": "electronics",
+      "price_paise": 169900,
+      "currency": "INR",
+      "stock": 18,
+      "attributes": { "connectivity": "2.4GHz wireless + Bluetooth", "dpi": 2400, "grip_angle_deg": 57, "buttons": 6, "rechargeable": true, "warranty_months": 18 }
+    },
+    {
+      "id": "prod_elec_012",
+      "title": "Lumen Desk Ring Light 10-inch",
+      "description": "Ten-inch bi-colour ring light on a weighted desk stand with stepless dimming from 2700K to 6500K. Clamps a phone or sits behind a webcam.",
+      "category": "electronics",
+      "price_paise": 159900,
+      "currency": "INR",
+      "stock": 26,
+      "attributes": { "diameter_inch": 10, "colour_temp_k": "2700-6500", "dimming": "stepless 1-100%", "mount": "weighted desk stand", "warranty_months": 12 }
+    },
+    {
+      "id": "prod_offc_001",
+      "title": "Meridian Aluminium Laptop Stand",
+      "description": "Folding aluminium laptop riser that lifts a 13 to 16 inch machine to eye level and collapses flat enough for a backpack. Silicone pads keep the lid from sliding.",
+      "category": "office",
+      "price_paise": 199900,
+      "currency": "INR",
+      "stock": 31,
+      "attributes": { "material": "anodised aluminium", "fits_inches": "13-16", "height_levels": 6, "folded_thickness_mm": 18, "load_capacity_kg": 8, "warranty_months": 24 }
+    },
+    {
+      "id": "prod_offc_002",
+      "title": "Meridian Single Monitor Arm",
+      "description": "Gas-spring single monitor arm with a desk clamp and a grommet mount in the box. Holds up to a 32 inch panel and routes the cable through the arm.",
+      "category": "office",
+      "price_paise": 389900,
+      "currency": "INR",
+      "stock": 12,
+      "attributes": { "max_screen_inch": 32, "load_capacity_kg": 9, "mount": "clamp + grommet", "vesa": "75x75, 100x100", "cable_routing": true, "warranty_months": 36 }
+    },
+    {
+      "id": "prod_offc_003",
+      "title": "Quill A5 Dotted Notebook",
+      "description": "A5 hardbound notebook, 192 pages of 120gsm dotted paper that does not ghost under a fountain pen. Lies flat thanks to a stitched signature binding.",
+      "category": "office",
+      "price_paise": 49900,
+      "currency": "INR",
+      "stock": 210,
+      "attributes": { "size": "A5", "pages": 192, "gsm": 120, "ruling": "5mm dotted", "binding": "stitched, lies flat", "cover": "hardbound" }
+    },
+    {
+      "id": "prod_offc_004",
+      "title": "Quill Gel Pen Pack of 10",
+      "description": "Pack of ten 0.5mm gel pens with quick-dry ink that will not smear under the side of a left hand. Six black, two blue, two red.",
+      "category": "office",
+      "price_paise": 29900,
+      "currency": "INR",
+      "stock": 340,
+      "attributes": { "count": 10, "nib_mm": 0.5, "ink": "quick-dry gel", "colours": "6 black, 2 blue, 2 red", "refillable": true }
+    },
+    {
+      "id": "prod_offc_005",
+      "title": "Meridian Ergonomic Desk Chair",
+      "description": "Mesh-back task chair with adjustable lumbar support, 3D armrests and a synchro-tilt mechanism. Assembles in about fifteen minutes with the supplied hex key.",
+      "category": "office",
+      "price_paise": 1249900,
+      "currency": "INR",
+      "stock": 6,
+      "attributes": { "back": "breathable mesh", "lumbar": "adjustable depth and height", "armrests": "3D adjustable", "tilt": "synchro with 4 lock positions", "load_capacity_kg": 120, "warranty_months": 36 }
+    },
+    {
+      "id": "prod_offc_006",
+      "title": "Meridian Under-Desk Cable Tray",
+      "description": "Steel under-desk cable tray that screws or clamps on and hides a power strip plus a laptop brick. Keeps the floor clear for a vacuum.",
+      "category": "office",
+      "price_paise": 99900,
+      "currency": "INR",
+      "stock": 47,
+      "attributes": { "material": "powder-coated steel", "length_cm": 40, "mount": "screw or clamp", "load_capacity_kg": 5, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_offc_007",
+      "title": "Quill Bamboo Desk Organiser",
+      "description": "Bamboo desk organiser with a phone slot, a pen well and two shallow trays for cards and keys. Sanded smooth and finished with food-safe oil.",
+      "category": "office",
+      "price_paise": 79900,
+      "currency": "INR",
+      "stock": 64,
+      "attributes": { "material": "solid bamboo", "compartments": 5, "finish": "food-safe oil", "dimensions_cm": "24 x 12 x 9" }
+    },
+    {
+      "id": "prod_offc_008",
+      "title": "Meridian Anti-Fatigue Standing Mat",
+      "description": "Polyurethane standing desk mat with a bevelled edge so a chair rolls over it without catching. Takes the ache out of a two-hour standing block.",
+      "category": "office",
+      "price_paise": 229900,
+      "currency": "INR",
+      "stock": 19,
+      "attributes": { "material": "high-density polyurethane", "thickness_mm": 20, "dimensions_cm": "80 x 50", "bevelled_edge": true, "warranty_months": 24 }
+    },
+    {
+      "id": "prod_home_001",
+      "title": "Terra Stainless Steel Vacuum Flask 1L",
+      "description": "Double-walled 18/8 stainless steel flask that holds tea hot for twelve hours and water cold for twenty-four. The lid doubles as a 200ml cup.",
+      "category": "home_kitchen",
+      "price_paise": 139900,
+      "currency": "INR",
+      "stock": 88,
+      "attributes": { "capacity_ml": 1000, "material": "18/8 stainless steel", "hot_retention_hours": 12, "cold_retention_hours": 24, "leak_proof": true, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_home_002",
+      "title": "Terra Cast Iron Dosa Tawa",
+      "description": "Pre-seasoned cast iron tawa, 10 inches across with a low rim for an easy spatula angle. Gets better with every dosa; hand wash and wipe with oil.",
+      "category": "home_kitchen",
+      "price_paise": 119900,
+      "currency": "INR",
+      "stock": 52,
+      "attributes": { "material": "pre-seasoned cast iron", "diameter_inch": 10, "weight_kg": 2.4, "induction_safe": true, "handle": "riveted cast" }
+    },
+    {
+      "id": "prod_home_003",
+      "title": "Terra Pour-Over Coffee Kit",
+      "description": "Borosilicate pour-over dripper, a 600ml server and fifty paper filters. Makes two mugs at a time without any electricity.",
+      "category": "home_kitchen",
+      "price_paise": 179900,
+      "currency": "INR",
+      "stock": 37,
+      "attributes": { "material": "borosilicate glass", "server_ml": 600, "filters_included": 50, "brews_cups": 2, "dishwasher_safe": true }
+    },
+    {
+      "id": "prod_home_004",
+      "title": "Terra Airtight Storage Jar Set of 4",
+      "description": "Four borosilicate storage jars with bamboo lids and silicone gaskets, sized for dal, rice, sugar and coffee. Stack without wobbling.",
+      "category": "home_kitchen",
+      "price_paise": 159900,
+      "currency": "INR",
+      "stock": 41,
+      "attributes": { "count": 4, "capacities_ml": "500, 750, 1000, 1500", "material": "borosilicate and bamboo", "airtight": true, "stackable": true }
+    },
+    {
+      "id": "prod_home_005",
+      "title": "Halo LED Table Lamp",
+      "description": "Dimmable LED desk lamp with a flicker-free driver and a memory that returns to the last brightness. Warm 3000K by default, cool 6000K on a long press.",
+      "category": "home_kitchen",
+      "price_paise": 189900,
+      "currency": "INR",
+      "stock": 29,
+      "attributes": { "power_watts": 9, "colour_temp_k": "3000-6000", "dimming": "5 levels with memory", "flicker_free": true, "warranty_months": 24 }
+    },
+    {
+      "id": "prod_home_006",
+      "title": "Terra Bamboo Chopping Board",
+      "description": "End-grain bamboo chopping board with a juice groove and a recessed handle. Kinder to knife edges than plastic and lighter than teak.",
+      "category": "home_kitchen",
+      "price_paise": 89900,
+      "currency": "INR",
+      "stock": 76,
+      "attributes": { "material": "end-grain bamboo", "dimensions_cm": "38 x 28 x 2", "juice_groove": true, "reversible": true }
+    },
+    {
+      "id": "prod_home_007",
+      "title": "Halo Aroma Diffuser 300ml",
+      "description": "Ultrasonic aroma diffuser with a 300ml tank, an auto cut-off when dry and a night mode that turns every light off but keeps the mist running.",
+      "category": "home_kitchen",
+      "price_paise": 149900,
+      "currency": "INR",
+      "stock": 33,
+      "attributes": { "capacity_ml": 300, "runtime_hours": 10, "auto_shutoff": true, "night_mode": true, "noise_db": 28, "warranty_months": 12 }
+    },
+    {
+      "id": "prod_fit_001",
+      "title": "Stride TPE Yoga Mat 6mm",
+      "description": "Six millimetre TPE yoga mat with an alignment print and a closed-cell surface that does not soak up sweat. Comes with a carry strap.",
+      "category": "fitness",
+      "price_paise": 129900,
+      "currency": "INR",
+      "stock": 58,
+      "attributes": { "thickness_mm": 6, "material": "TPE closed-cell", "dimensions_cm": "183 x 61", "alignment_print": true, "carry_strap": true }
+    },
+    {
+      "id": "prod_fit_002",
+      "title": "Stride Resistance Band Set",
+      "description": "Five fabric resistance bands from light to extra heavy with a door anchor and two handles. Fabric rather than latex, so they do not roll up the thigh.",
+      "category": "fitness",
+      "price_paise": 99900,
+      "currency": "INR",
+      "stock": 94,
+      "attributes": { "count": 5, "resistance_kg": "5, 10, 15, 20, 30", "material": "woven fabric", "door_anchor": true, "handles": 2 }
+    },
+    {
+      "id": "prod_fit_003",
+      "title": "Stride Adjustable Dumbbell 20kg",
+      "description": "Single adjustable dumbbell that dials from 2.5kg to 20kg in 2.5kg steps, replacing eight fixed pairs. Cast iron plates with a knurled steel handle.",
+      "category": "fitness",
+      "price_paise": 749900,
+      "currency": "INR",
+      "stock": 11,
+      "attributes": { "min_kg": 2.5, "max_kg": 20, "increment_kg": 2.5, "plate_material": "cast iron", "handle": "knurled steel", "warranty_months": 24 }
+    },
+    {
+      "id": "prod_fit_004",
+      "title": "Stride Foam Roller 45cm",
+      "description": "High-density EVA foam roller with a textured surface for calves, quads and the upper back. Holds its shape past a hundred kilos.",
+      "category": "fitness",
+      "price_paise": 89900,
+      "currency": "INR",
+      "stock": 67,
+      "attributes": { "length_cm": 45, "diameter_cm": 14, "material": "high-density EVA", "texture": "grid", "load_capacity_kg": 150 }
+    },
+    {
+      "id": "prod_fit_005",
+      "title": "Pulse Smart Fitness Band",
+      "description": "Fitness band with continuous heart rate, SpO2 spot checks and a fourteen day battery. Syncs over Bluetooth to a phone app with no subscription.",
+      "category": "fitness",
+      "price_paise": 279900,
+      "currency": "INR",
+      "stock": 24,
+      "attributes": { "display": "1.47in AMOLED", "battery_life_days": 14, "heart_rate": "continuous", "spo2": true, "water_resistance": "5ATM", "warranty_months": 12 }
+    },
+    {
+      "id": "prod_fit_006",
+      "title": "Stride Steel Skipping Rope",
+      "description": "Ball-bearing skipping rope with a coated steel cable that can be cut to length and weighted aluminium handles. Built for speed work rather than beginners.",
+      "category": "fitness",
+      "price_paise": 59900,
+      "currency": "INR",
+      "stock": 112,
+      "attributes": { "cable": "PVC-coated steel", "length_cm": 300, "adjustable": true, "bearings": "dual ball", "handle_material": "aluminium" }
+    }
+  ]
+}

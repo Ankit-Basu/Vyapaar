@@ -1,0 +1,19 @@
+# --- AgentMandi API: core runtime ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# --- signed mandates (AP2-style) ---
+PyJWT==2.10.1
+
+# --- payments (Razorpay test mode) ---
+razorpay==1.4.2
+httpx==0.28.1
+
+# --- vector math for catalog semantic search ---
+numpy==2.2.1
+
+# --- MCP server: lets any external agent transact with the merchant ---
+mcp==1.2.0

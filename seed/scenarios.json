@@ -1,0 +1,135 @@
+{
+  "schema_version": "agentmandi.scenarios.v1",
+  "note": "Deterministic demo runs. Each one resets nothing by itself; POST /demo/reset first for a clean trail.",
+  "scenarios": [
+    {
+      "id": "happy_path",
+      "title": "Agent discovers, prices and buys",
+      "proves": "transactable end to end",
+      "narrative": "A buyer agent is handed a bounded mandate and the goal 'buy a wireless mouse under 1500'. It searches the machine-readable catalog, picks the Aurora Wireless Optical Mouse on a stated rationale, raises a purchase intent, clears all seven guardrails, opens a Razorpay order plus payment link, and settles on a signature-verified webhook.",
+      "expected_outcome": "paid",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": ["electronics", "office"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "Every check listed in order with a reason on GET /intents/{id}/decision",
+        "Intent flips to PAID only after the webhook signature verifies",
+        "Mandate spent_paise moves from 0 to 129900"
+      ]
+    },
+    {
+      "id": "budget_exceeded",
+      "title": "Budget exhausted, agent re-plans",
+      "proves": "graceful failure",
+      "narrative": "The mandate carries a deliberately tight budget. The agent buys once, then goes after a second, pricier item that no longer fits. The guardrails deny it with the exact arithmetic, the agent reads which check failed, re-searches under the money that actually remains, and buys a cheaper alternative instead of retrying blindly.",
+      "expected_outcome": "denied then recovered",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 200000,
+        "allowed_categories": ["electronics", "office"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "policy.decision audit row with action DENY and the shortfall in rupees",
+        "Agent step 'replan' naming the remaining budget as the new ceiling",
+        "Second purchase clears and settles"
+      ]
+    },
+    {
+      "id": "human_gate",
+      "title": "High-value purchase waits for a human",
+      "proves": "gated",
+      "narrative": "The agent goes after a 7,999 INR pair of headphones. Every guardrail passes, but the amount is at or above the human-review threshold, so the decision is gate_for_human rather than auto_approve. Budget is reserved while the intent waits, and the dashboard shows an Approve / Reject control. Nothing charges until a person clicks.",
+      "expected_outcome": "awaiting_human",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 900000,
+        "total_budget_paise": 1500000,
+        "allowed_categories": ["electronics"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "Decision action gate_for_human with the threshold quoted",
+        "Mandate reserved_paise is held at 799900 while it waits",
+        "POST /policy/resolve re-runs every other guardrail before approving"
+      ]
+    },
+    {
+      "id": "category_blocked",
+      "title": "Off-scope category refused",
+      "proves": "bounded",
+      "narrative": "The mandate authorises electronics and office supplies only. The agent is asked for a yoga mat. The category check fails, the intent is denied, and no budget is reserved. The agent recognises this is not something a cheaper product would fix and stops.",
+      "expected_outcome": "denied",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": ["electronics", "office"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "category_allowed check FAILs and every later check is marked skipped",
+        "reserved_paise stays at 0 - a denial never holds money"
+      ]
+    },
+    {
+      "id": "out_of_stock",
+      "title": "Out of stock mid-flow",
+      "proves": "graceful failure",
+      "narrative": "The Aurora Silent Click Mouse is driven to zero stock, then the agent is asked for a quiet wireless mouse. The stock guardrail refuses the sale rather than charging for something the merchant cannot ship, and the agent re-searches and offers an in-stock alternative.",
+      "expected_outcome": "recovered",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": ["electronics", "office"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "stock_available check FAILs with the exact stock count",
+        "Agent step 'replan' excludes the dead product and finds another"
+      ]
+    },
+    {
+      "id": "payment_failure",
+      "title": "Card declined, budget released",
+      "proves": "graceful failure",
+      "narrative": "An approved purchase reaches checkout, then the card is declined. A signature-verified payment.failed webhook moves the intent to FAILED and releases the budget hold, so a charge that never succeeded does not quietly consume the buyer's budget.",
+      "expected_outcome": "failed cleanly",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": ["electronics", "office"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "intent.failed audit row explaining the hold was released rather than spent",
+        "Mandate spent_paise is unchanged and reserved_paise returns to 0"
+      ]
+    },
+    {
+      "id": "forged_mandate",
+      "title": "Tampered mandate rejected",
+      "proves": "explainable, bounded",
+      "narrative": "A mandate token is edited to raise its own spending cap. Signature verification fails immediately, the intent never reaches the other guardrails, and the attempt is still written to the audit trail.",
+      "expected_outcome": "denied",
+      "mandate": {
+        "buyer_id": "buyer_mallory",
+        "per_txn_cap_paise": 100000,
+        "total_budget_paise": 200000,
+        "allowed_categories": ["electronics"],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "mandate_valid FAILs on the signature, not on the amount",
+        "The rejected attempt still appears in the audit trail"
+      ]
+    }
+  ]
+}
