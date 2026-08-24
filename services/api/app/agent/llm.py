@@ -51,7 +51,7 @@ def _extract_json(text: str) -> dict[str, Any]:
                 return json.loads(text[start : end + 1])
             except json.JSONDecodeError as exc:
                 raise LLMUnavailable(f"Model returned unparseable JSON: {exc}") from exc
-        raise LLMUnavailable("Model returned no JSON object")
+        raise LLMUnavailable("Model returned no JSON object") from None
 
 
 class GeminiClient:

@@ -12,9 +12,9 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
+import jwt
 from fastapi import APIRouter, HTTPException
 
 from ..agent import buyer
@@ -340,11 +340,9 @@ def _scenario_forged_mandate(spec: dict[str, Any]) -> ScenarioResult:
     # Re-sign the payload with the wrong key, keeping the shape intact but raising
     # the cap. This is exactly what a token holder trying to widen their own scope
     # would produce, and the signature check is what stops it.
-    import jwt as pyjwt
-
-    original = pyjwt.decode(token, options={"verify_signature": False})
+    original = jwt.decode(token, options={"verify_signature": False})
     tampered_claims = {**original, "per_txn_cap_paise": 99_999_900, "total_budget_paise": 99_999_900}
-    forged = pyjwt.encode(tampered_claims, "attacker-does-not-know-the-secret", algorithm="HS256")
+    forged = jwt.encode(tampered_claims, "attacker-does-not-know-the-secret", algorithm="HS256")
 
     verification = mandates.verify(forged)
     try:

@@ -176,7 +176,7 @@ def issue(request: MandateIssueRequest) -> MandateIssueResponse:
             ),
             reasons=[
                 "Human granted a bounded, time-limited spending authorisation to an agent.",
-                f"Scope is enforced server-side on every intent, not by the token holder.",
+                "Scope is enforced server-side on every intent, not by the token holder.",
             ],
             payload=record.model_dump(),
         )

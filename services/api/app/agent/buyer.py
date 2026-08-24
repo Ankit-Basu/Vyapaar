@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from ..catalog import store as catalog
-from ..config import get_settings
 from ..intents import service as intents
 from ..mandate import service as mandates
 from ..models import (
@@ -279,7 +278,6 @@ class BuyerAgent:
         before the intent is raised, which is where the demo stages a concurrent
         stock-out. Nothing in production passes it.
         """
-        settings = get_settings()
         steps: list[AgentStep] = []
         step_no = 0
 

@@ -87,10 +87,7 @@ DOMAIN_LEXICON: dict[str, tuple[str, ...]] = {
 # before this point, so leaving "under" in the query would otherwise pull up an
 # "Under-Desk Cable Tray" on a search for a mouse.
 STOPWORDS = frozenset(
-    """a an and any are as at be best by can cheap do for from get give good have
-    how i in is it its me my need of on or please some something that the their
-    them then there this to under up want was what when which who will with would
-    you your""".split()
+    ["a", "an", "and", "any", "are", "as", "at", "be", "best", "by", "can", "cheap", "do", "for", "from", "get", "give", "good", "have", "how", "i", "in", "is", "it", "its", "me", "my", "need", "of", "on", "or", "please", "some", "something", "that", "the", "their", "them", "then", "there", "this", "to", "under", "up", "want", "was", "what", "when", "which", "who", "will", "with", "would", "you", "your"]
 )
 
 

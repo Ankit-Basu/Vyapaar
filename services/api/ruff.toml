@@ -1,0 +1,20 @@
+# Lint config for the AgentMandi API.
+line-length = 100
+
+[lint]
+select = ["F", "E", "W", "I", "UP", "B", "SIM", "ARG", "PLC"]
+ignore = [
+    # A few reason strings and SQL-adjacent lines read better slightly over the
+    # limit than wrapped; the formatter keeps everything else at 100.
+    "E501",
+]
+
+[lint.per-file-ignores]
+# FastAPI dictates these signatures: a lifespan takes the app, an exception
+# handler takes the request, whether or not the body uses them.
+"app/main.py" = ["ARG001"]
+# Tests import inside a function where the import is part of what is being tested.
+"tests/*" = ["PLC0415"]
+
+[format]
+line-ending = "lf"

@@ -14,6 +14,7 @@ Two properties worth calling out:
 
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -183,10 +184,10 @@ def transaction() -> Iterator[sqlite3.Connection]:
         yield conn
         conn.execute("COMMIT")
     except Exception:
-        try:
+        # Rolling back an already-closed transaction is not itself an error worth
+        # masking the original exception with.
+        with contextlib.suppress(sqlite3.Error):
             conn.execute("ROLLBACK")
-        except sqlite3.Error:  # pragma: no cover - rollback on an already-closed tx
-            pass
         raise
     finally:
         conn.close()
@@ -199,7 +200,7 @@ def init_db() -> None:
 
 
 def reset_db() -> None:
-    """Drop every table and rebuild. Used by tests and by `make seed --reset`."""
+    """Drop every table and rebuild. Used by the test suite and by `POST /demo/reset`."""
     with connect() as conn:
         conn.executescript(
             """

@@ -8,9 +8,9 @@ from app.agent import buyer
 from app.catalog import store as catalog
 from app.config import get_settings
 from app.intents import service as intents
-from app.mandate import service as mandates
 from app.main import app
-from app.models import IntentStatus, MandateIssueRequest, PurchaseIntentRequest
+from app.mandate import service as mandates
+from app.models import IntentStatus, MandateIssueRequest
 
 from .conftest import HEADPHONES, KEYBOARD, MOUSE, SILENT_MOUSE
 
@@ -116,7 +116,7 @@ def test_agent_recovers_when_the_item_sells_out_mid_run(mandate_token):
     assert result.outcome == "paid"
 
 
-def test_agent_gives_up_cleanly_when_nothing_fits(mandate_token):
+def test_agent_gives_up_cleanly_when_nothing_fits():
     """No infinite retry loop: it explains and stops."""
     tiny = mandates.issue(
         MandateIssueRequest(

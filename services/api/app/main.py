@@ -16,8 +16,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .audit.broadcaster import broadcaster
 from .agent.router import router as agent_router
+from .audit.broadcaster import broadcaster
 from .audit.router import router as audit_router
 from .catalog import store as catalog
 from .catalog.router import router as catalog_router
