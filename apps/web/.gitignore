@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ...but the example belongs in the repo; it documents the one variable this app reads.
+!.env.local.example
