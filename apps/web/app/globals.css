@@ -72,9 +72,22 @@ body {
 
 /* ---------------------------------------------------------------- glass --- */
 
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(140%);
+/*
+ * Two tiers on purpose.
+ *
+ * `.glass` does a real backdrop blur, and is reserved for surfaces that actually
+ * have moving content behind them: the fixed nav, and the dashboard panels.
+ *
+ * `.glass-flat` is the same look with no backdrop-filter at all. Behind the
+ * landing page's decorative cards sits a smooth gradient, and blurring a smooth
+ * gradient returns the same smooth gradient — so those seventeen backdrop
+ * filters were each paying a per-frame compositing cost for a difference nobody
+ * can see. Same tokens, same border, same top-edge highlight, no cost.
+ */
+.glass,
+.glass-flat,
+.glass-strong,
+.glass-flat-strong {
   border: 1px solid var(--glass-border);
   /* A hairline of light along the top edge: the thing that makes glass read as
      glass rather than as a translucent rectangle. */
@@ -83,13 +96,26 @@ body {
     0 8px 32px -8px rgba(0, 0, 0, 0.6);
 }
 
-.glass-strong {
+.glass,
+.glass-flat {
+  background: var(--glass-bg);
+}
+
+.glass-strong,
+.glass-flat-strong {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(28px) saturate(150%);
-  border: 1px solid var(--glass-border);
   box-shadow:
     inset 0 1px 0 0 var(--glass-highlight),
     0 16px 48px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* A single filter function is meaningfully cheaper than chaining two, and at
+   this radius the saturate() was doing very little over a dark ground. */
+.glass {
+  backdrop-filter: blur(14px);
+}
+.glass-strong {
+  backdrop-filter: blur(18px);
 }
 
 /* Gradient text for headline accents. */
@@ -120,7 +146,16 @@ body {
 
 /* ------------------------------------------------------------ background --- */
 
-/* Slow-drifting colour behind everything. Fixed, so it does not repaint on scroll. */
+/*
+ * Slow-drifting colour behind everything.
+ *
+ * These used to be hard-edged circles softened with `filter: blur(100px)`, which
+ * meant re-rasterising two ~960px surfaces on every frame of the drift — and
+ * every backdrop-filter in front of them had to recompute against a backdrop
+ * that never stopped moving. A radial-gradient is already soft, so the blur was
+ * paying for a look it could get for free. Without the filter the drift is a
+ * plain composited transform and costs essentially nothing.
+ */
 .aurora {
   position: fixed;
   inset: 0;
@@ -132,34 +167,47 @@ body {
 .aurora::after {
   content: "";
   position: absolute;
-  width: 60vmax;
-  height: 60vmax;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.28;
+  /* Oversized so the drift never exposes an edge. */
+  inset: -25%;
   will-change: transform;
 }
 .aurora::before {
-  background: radial-gradient(circle, var(--color-brand-600), transparent 65%);
-  top: -20vmax;
-  left: -10vmax;
-  animation: drift-a 28s ease-in-out infinite alternate;
+  background: radial-gradient(
+    45% 45% at 22% 18%,
+    color-mix(in srgb, var(--color-brand-600) 42%, transparent),
+    transparent 70%
+  );
+  animation: drift-a 34s ease-in-out infinite alternate;
 }
 .aurora::after {
-  background: radial-gradient(circle, var(--color-violet-500), transparent 65%);
-  bottom: -25vmax;
-  right: -12vmax;
-  animation: drift-b 34s ease-in-out infinite alternate;
+  background: radial-gradient(
+    45% 45% at 78% 82%,
+    color-mix(in srgb, var(--color-violet-500) 36%, transparent),
+    transparent 70%
+  );
+  animation: drift-b 42s ease-in-out infinite alternate;
+}
+
+/*
+ * The control room holds the drift still. It has real backdrop-filter panels,
+ * and a backdrop that never stops moving forces every one of them to recompute
+ * on every frame — a permanent idle cost on a view people leave open. Static,
+ * the blur is computed once and cached.
+ */
+.aurora--still::before,
+.aurora--still::after {
+  animation: none;
+  will-change: auto;
 }
 
 @keyframes drift-a {
   to {
-    transform: translate3d(12vw, 8vh, 0) scale(1.15);
+    transform: translate3d(6%, 4%, 0) scale(1.12);
   }
 }
 @keyframes drift-b {
   to {
-    transform: translate3d(-10vw, -6vh, 0) scale(1.2);
+    transform: translate3d(-5%, -3%, 0) scale(1.15);
   }
 }
 

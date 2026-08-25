@@ -64,9 +64,11 @@ export function GuardrailScene() {
       // scrolls. The scrub ties progress to scroll position rather than to time,
       // so the reader controls the pace and can scrub backwards.
       gsap.set(rows, { opacity: 0.28 });
-      gsap.set(".gr-reason", { opacity: 0, height: 0 });
+      // Reasons keep their space and only fade: animating height would run
+      // layout on every scroll frame, eight times over, inside a pinned section.
+      gsap.set(".gr-reason", { opacity: 0, y: -4 });
       gsap.set(".gr-tick", { scale: 0, opacity: 0 });
-      gsap.set(".gr-verdict", { opacity: 0, scale: 0.85, filter: "blur(10px)" });
+      gsap.set(".gr-verdict", { opacity: 0, scale: 0.85 });
 
       const timeline = gsap.timeline({
         scrollTrigger: {
@@ -91,7 +93,7 @@ export function GuardrailScene() {
           )
           .to(
             row.querySelector(".gr-reason"),
-            { opacity: 1, height: "auto", duration: 0.35 },
+            { opacity: 1, y: 0, duration: 0.35 },
             at + 0.12,
           )
           // The rail fills to this row's position, so the progress line tracks
@@ -112,7 +114,7 @@ export function GuardrailScene() {
         .to(rows, { opacity: 1, duration: 0.4 }, CHECKS.length)
         .to(
           ".gr-verdict",
-          { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.7, ease: EASE },
+          { opacity: 1, scale: 1, duration: 0.7, ease: EASE },
           CHECKS.length + 0.1,
         )
         .to(".gr-card", { borderColor: "rgba(47,212,143,0.4)", duration: 0.5 }, CHECKS.length + 0.1);
@@ -121,17 +123,17 @@ export function GuardrailScene() {
     still: () => {
       // No pinning, no scrub: show the finished evaluation.
       gsap.set(".gr-row", { opacity: 1 });
-      gsap.set(".gr-reason", { opacity: 1, height: "auto" });
+      gsap.set(".gr-reason", { opacity: 1, y: 0 });
       gsap.set(".gr-tick", { scale: 1, opacity: 1 });
       gsap.set(".gr-index", { color: "#2fd48f" });
       gsap.set(".gr-rail-fill", { scaleY: 1 });
-      gsap.set(".gr-verdict", { opacity: 1, scale: 1, filter: "none" });
+      gsap.set(".gr-verdict", { opacity: 1, scale: 1 });
     },
   });
 
   return (
     <section ref={scope} id="guardrails" className="relative">
-      <div className="gr-stage flex min-h-dvh items-center py-20">
+      <div className="gr-stage flex min-h-dvh items-center py-12">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
           {/* Left: what is being decided */}
           <div className="lg:sticky lg:top-28 lg:self-start">
@@ -147,7 +149,7 @@ export function GuardrailScene() {
               the trail shows exactly how far evaluation got, and why it stopped.
             </p>
 
-            <div className="gr-card glass-strong mt-8 rounded-2xl p-4 transition-colors">
+            <div className="gr-card glass-flat-strong mt-8 rounded-2xl p-4">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-mute-500">
                   <Lock size={11} />
@@ -178,7 +180,7 @@ export function GuardrailScene() {
             <div className="absolute top-2 bottom-2 left-[13px] w-px bg-white/10" />
             <div className="gr-rail-fill absolute top-2 bottom-2 left-[13px] w-px origin-top scale-y-0 bg-gradient-to-b from-pass-500 via-pass-500 to-brand-400" />
 
-            <ol className="space-y-3.5">
+            <ol className="space-y-2.5">
               {CHECKS.map((check, index) => (
                 <li key={check.id} className="gr-row relative flex gap-4 pl-0">
                   <span className="relative z-10 grid size-[27px] shrink-0 place-items-center rounded-full border border-white/10 bg-ink-900">
@@ -195,8 +197,8 @@ export function GuardrailScene() {
                       <span className="font-mono text-[12px] text-brand-300">{check.id}</span>
                       <span className="text-[13px] font-medium text-mute-200">{check.name}</span>
                     </div>
-                    <div className="gr-reason overflow-hidden">
-                      <p className="pt-1 text-[12px] leading-relaxed text-mute-500">
+                    <div className="gr-reason">
+                      <p className="pt-0.5 text-[11.5px] leading-snug text-mute-500">
                         {check.reason}
                       </p>
                     </div>
@@ -205,7 +207,7 @@ export function GuardrailScene() {
               ))}
             </ol>
 
-            <div className="gr-verdict glass mt-6 flex items-center gap-3 rounded-xl px-4 py-3">
+            <div className="gr-verdict glass-flat mt-6 flex items-center gap-3 rounded-xl px-4 py-3">
               <ShieldCheck size={16} className="shrink-0 text-pass-500" />
               <p className="text-[12.5px] leading-relaxed text-mute-300">
                 All eight passed. Only now may the payment service open a Razorpay order — and

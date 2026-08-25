@@ -119,7 +119,7 @@ export function AuditScene() {
             {BLOCKS.map((block, index) => (
               <div key={block.seq} className="contents">
                 <div
-                  className={`ac-block ac-block-${index} glass relative flex-1 rounded-xl px-3.5 py-3 will-change-transform`}
+                  className={`ac-block ac-block-${index} glass-flat relative flex-1 rounded-xl px-3.5 py-3`}
                 >
                   {index === 2 && (
                     <span className="ac-tamper-badge absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-fail-500 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-ink-950 uppercase whitespace-nowrap">
@@ -156,14 +156,14 @@ export function AuditScene() {
 
           {/* Verdicts occupy the same slot, so one replaces the other in place. */}
           <div className="relative mt-10 flex h-16 items-start justify-center">
-            <div className="ac-verdict-ok glass absolute flex items-center gap-2.5 rounded-xl px-4 py-2.5">
+            <div className="ac-verdict-ok glass-flat absolute flex items-center gap-2.5 rounded-xl px-4 py-2.5">
               <ShieldCheck size={15} className="text-pass-500" />
               <span className="text-[12.5px] text-mute-300">
                 <span className="font-mono text-pass-500">valid: true</span> — all 5 entries chain
                 cleanly from genesis.
               </span>
             </div>
-            <div className="ac-verdict-bad glass absolute flex max-w-lg items-start gap-2.5 rounded-xl border-fail-500/40 px-4 py-2.5">
+            <div className="ac-verdict-bad glass-flat absolute flex max-w-lg items-start gap-2.5 rounded-xl border-fail-500/40 px-4 py-2.5">
               <AlertTriangle size={15} className="mt-0.5 shrink-0 text-fail-500" />
               <span className="text-[12.5px] leading-relaxed text-mute-300">
                 <span className="font-mono text-fail-500">broken_at_seq: 3</span> — row 3&rsquo;s

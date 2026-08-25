@@ -26,7 +26,7 @@ export function Hero() {
           { opacity: 0, yPercent: 115, rotateX: -55, duration: 0.9, stagger: 0.045 },
           "-=0.4",
         )
-        .from(".hero-sub", { opacity: 0, y: 20, filter: "blur(8px)", duration: 0.8 }, "-=0.5")
+        .from(".hero-sub", { opacity: 0, y: 20, duration: 0.8 }, "-=0.5")
         .from(".hero-cta", { opacity: 0, y: 16, duration: 0.7, stagger: 0.08 }, "-=0.5")
         .from(
           card.current,
@@ -65,7 +65,7 @@ export function Hero() {
     still: () => {
       gsap.set(
         [".hero-badge", ".hero-word", ".hero-sub", ".hero-cta", ".hero-check", ".hero-hint", card.current],
-        { opacity: 1, y: 0, x: 0, scale: 1, rotateX: 0, yPercent: 0, filter: "none" },
+        { opacity: 1, y: 0, x: 0, scale: 1, rotateX: 0, yPercent: 0 },
       );
     },
   });
@@ -83,7 +83,7 @@ export function Hero() {
         className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16"
       >
         <div style={{ perspective: 800 }}>
-          <div className="hero-badge glass inline-flex items-center gap-2 rounded-full px-3 py-1.5">
+          <div className="hero-badge glass-flat inline-flex items-center gap-2 rounded-full px-3 py-1.5">
             <Sparkles size={12} className="text-brand-400" />
             <span className="text-[11.5px] font-medium tracking-wide text-mute-300">
               Razorpay Buildathon · Agent Commerce Layer
@@ -129,7 +129,7 @@ export function Hero() {
             </Link>
             <a
               href="#guardrails"
-              className="hero-cta glass inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-medium text-mute-200 transition-colors hover:text-white"
+              className="hero-cta glass-flat inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-medium text-mute-200 transition-colors hover:text-white"
             >
               <ShieldCheck size={15} className="text-brand-400" />
               See the guardrails
@@ -141,7 +141,7 @@ export function Hero() {
         <div style={{ perspective: 1100 }}>
           <div
             ref={card}
-            className="glass-strong relative overflow-hidden rounded-2xl p-5 will-change-transform"
+            className="glass-flat-strong relative overflow-hidden rounded-2xl p-5 will-change-transform"
           >
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="animate-sheen absolute inset-y-0 -left-1/4 w-1/3 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />

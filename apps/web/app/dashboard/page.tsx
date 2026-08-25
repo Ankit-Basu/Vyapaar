@@ -21,7 +21,7 @@ export default function Dashboard() {
 
   return (
     <main className="relative flex h-dvh flex-col gap-3 overflow-hidden p-3">
-      <div className="aurora" aria-hidden />
+      <div className="aurora aurora--still" aria-hidden />
       <div className="grain" aria-hidden />
 
       <Header onReset={bump} refreshKey={tick} />

@@ -76,8 +76,9 @@ export function useReducedMotion(): boolean | null {
 /**
  * Fade-and-rise on entry, with an optional stagger over direct children.
  *
- * The blur is what stops this reading as a stock fade-up: text resolves into
- * focus rather than simply appearing, which reads as a camera settling.
+ * Deliberately opacity and transform only. A blur tween looks lovely and costs a
+ * full re-rasterisation of the text on every frame, which is not a trade worth
+ * making dozens of times down a scrolling page.
  */
 export function Reveal({
   children,
@@ -108,7 +109,6 @@ export function Reveal({
         gsap.from(targets, {
           opacity: 0,
           y,
-          filter: "blur(10px)",
           duration: 0.9,
           delay,
           ease: EASE,
@@ -120,7 +120,6 @@ export function Reveal({
         gsap.set(stagger ? scope.current!.children : scope.current, {
           opacity: 1,
           y: 0,
-          filter: "none",
         });
       },
     },

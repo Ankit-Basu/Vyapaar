@@ -61,7 +61,7 @@ export function StatStrip() {
 
   return (
     <section ref={scope} className="relative mx-auto max-w-7xl px-6 sm:px-8">
-      <div className="glass grid grid-cols-2 gap-px overflow-hidden rounded-2xl md:grid-cols-4">
+      <div className="glass-flat grid grid-cols-2 gap-px overflow-hidden rounded-2xl md:grid-cols-4">
         {STATS.map((stat) => (
           <div key={stat.label} className="stat-item px-5 py-6 text-center">
             <div
@@ -122,7 +122,7 @@ export function Problem() {
             body: "Every check, decision and rupee lands in an append-only hash chain you can verify with one request.",
           },
         ].map((card) => (
-          <div key={card.title} className="glass rounded-2xl p-5">
+          <div key={card.title} className="glass-flat rounded-2xl p-5">
             <card.icon size={17} className="text-brand-400" />
             <h3 className="mt-3.5 text-[14px] font-semibold">{card.title}</h3>
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute-500">{card.body}</p>
@@ -197,7 +197,7 @@ export function Mandate() {
         </div>
 
         <div style={{ perspective: 1000 }}>
-          <div className="scope-card glass-strong rounded-2xl p-5">
+          <div className="scope-card glass-flat-strong rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-[10.5px] text-mute-500">
                 JWT · HS256 · agentmandi.mandate.v1
@@ -286,7 +286,7 @@ export function Failure() {
         </Reveal>
 
         <div className="fail-grid mt-12 grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
-          <div className="fail-card glass rounded-2xl border-fail-500/30 p-5">
+          <div className="fail-card glass-flat rounded-2xl border-fail-500/30 p-5">
             <div className="flex items-center gap-2">
               <CircleSlash size={14} className="text-fail-500" />
               <span className="text-[10px] font-bold tracking-wider text-fail-500 uppercase">
@@ -312,12 +312,12 @@ export function Failure() {
           </div>
 
           <div className="fail-arrow flex items-center justify-center py-2 lg:px-2">
-            <span className="glass grid size-9 place-items-center rounded-full">
+            <span className="glass-flat grid size-9 place-items-center rounded-full">
               <RefreshCw size={14} className="text-brand-400" />
             </span>
           </div>
 
-          <div className="fail-card glass rounded-2xl border-pass-500/30 p-5">
+          <div className="fail-card glass-flat rounded-2xl border-pass-500/30 p-5">
             <div className="flex items-center gap-2">
               <ShieldCheck size={14} className="text-pass-500" />
               <span className="text-[10px] font-bold tracking-wider text-pass-500 uppercase">
@@ -443,7 +443,7 @@ export function Mcp() {
           </Reveal>
         </div>
 
-        <div className="term glass-strong overflow-hidden rounded-2xl">
+        <div className="term glass-flat-strong overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-2.5">
             <Terminal size={12} className="text-mute-500" />
             <span className="font-mono text-[10.5px] text-mute-500">
@@ -504,7 +504,7 @@ export function Cta() {
             href="https://github.com/Ankit-Basu/AgentMandi"
             target="_blank"
             rel="noreferrer"
-            className="glass inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[14px] font-medium text-mute-200 transition-colors hover:text-white"
+            className="glass-flat inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[14px] font-medium text-mute-200 transition-colors hover:text-white"
           >
             <GithubMark className="size-4" />
             Read the source
