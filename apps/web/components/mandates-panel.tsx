@@ -46,7 +46,7 @@ function BudgetMeter({ mandate }: { mandate: MandateRecord }) {
   const expired = new Date(mandate.expires_at) <= new Date();
 
   return (
-    <div className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2.5">
+    <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="truncate text-[12px] font-medium text-mute-100">
           {mandate.label ?? mandate.buyer_id}
@@ -57,7 +57,7 @@ function BudgetMeter({ mandate }: { mandate: MandateRecord }) {
       </div>
 
       {/* spent (solid) then held (hatched) then remaining */}
-      <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-ink-700">
+      <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="bg-pass-500" style={{ width: `${Math.min(100, spent)}%` }} />
         <div className="bg-gate-500/70" style={{ width: `${Math.min(100 - spent, held)}%` }} />
       </div>

@@ -115,8 +115,9 @@ npm install
 npm run dev
 ```
 
-The dashboard is on <http://localhost:3000>, the API on <http://127.0.0.1:8000>, and interactive
-API docs on <http://127.0.0.1:8000/docs>.
+<http://localhost:3000> is the landing page, <http://localhost:3000/dashboard> is the live
+control room, the API is on <http://127.0.0.1:8000>, and interactive API docs are on
+<http://127.0.0.1:8000/docs>.
 
 On first boot the API creates its SQLite database and ingests the 33-product seed catalog.
 
@@ -159,6 +160,20 @@ Hit **Reset demo** in the dashboard header first, so the audit trail starts clea
   its intent. The stock guardrail refuses the sale and the agent re-plans *inside the same run*.
 - **Tampered mandate** — a token edited to raise its own cap to ₹999,999 fails signature
   verification before any bound is even consulted.
+
+### The landing page
+
+<http://localhost:3000> walks through the same story before you open the control room. Two
+sections pin and scrub as you scroll, because both are *sequences* and letting the reader drive
+the pace explains them better than a static diagram: the eight guardrails illuminating one by
+one against a filling progress rail, and the audit chain assembling block by block before a
+historical row is edited and every link after it breaks.
+
+Both share one visual language with the dashboard — translucent glass over a slow aurora — so
+moving between them reads as one product. Everything is built on GSAP + ScrollTrigger, and the
+whole page has a real `prefers-reduced-motion` branch: under it the timelines are never created
+and the end state is applied directly, so nothing is hidden behind an animation that never
+plays.
 
 ### The audit trail (~20s)
 
@@ -287,7 +302,8 @@ verification, audit-chain tamper evidence, and the agent's recovery behaviour.
 ## Layout
 
 ```
-apps/web/                 Next.js dashboard — live audit stream, HITL gate, budget meters
+apps/web/app/page.tsx     Landing page — GSAP scroll-driven walkthrough of the system
+apps/web/app/dashboard/   Control room — live audit stream, HITL gate, budget meters
 packages/shared-types/    zod mirrors of the Pydantic models
 seed/products.json        33 deterministic products across 4 categories
 seed/scenarios.json       7 demo scenarios: narrative, expectations, what to watch for

@@ -67,7 +67,7 @@ export function ScenarioRunner({ onActivity }: { onActivity: () => void }) {
         return (
           <div
             key={scenario.id}
-            className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2.5"
+            className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5"
           >
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
@@ -105,7 +105,7 @@ export function ScenarioRunner({ onActivity }: { onActivity: () => void }) {
             </div>
 
             {isOpen && (
-              <div className="mt-2 space-y-2 border-t border-ink-700 pt-2">
+              <div className="mt-2 space-y-2 border-t border-white/[0.07] pt-2">
                 <p className="text-[11.5px] leading-relaxed text-mute-400">{scenario.narrative}</p>
                 {scenario.watch_for.length > 0 && (
                   <ul className="space-y-0.5">
@@ -126,7 +126,7 @@ export function ScenarioRunner({ onActivity }: { onActivity: () => void }) {
                       "rounded-md border px-2.5 py-2 text-[11.5px] leading-relaxed",
                       toneForStatus(result.outcome) === "fail"
                         ? "border-fail-500/40 bg-fail-bg text-fail-500"
-                        : "border-ink-600 bg-ink-900 text-mute-300",
+                        : "border-white/10 bg-black/25 text-mute-300",
                     )}
                   >
                     {result.summary}

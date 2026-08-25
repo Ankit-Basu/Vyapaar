@@ -35,7 +35,13 @@ export function AuditFeed({ onEvent }: { onEvent?: (event: AuditEvent) => void }
   const [chain, setChain] = useState<AuditChainVerification | null>(null);
   const seen = useRef<Set<number>>(new Set());
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
+
+  // Held in a ref, refreshed in an effect: the SSE subscription below must not
+  // tear down and reconnect every time the parent passes a new callback
+  // identity, but it still needs to call the latest one.
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   useEffect(() => {
     const source = new EventSource(`${API_BASE}/audit/stream?replay=40`);
@@ -108,7 +114,7 @@ export function AuditFeed({ onEvent }: { onEvent?: (event: AuditEvent) => void }
             : "Waiting for the first event. Run the agent or a scenario to fill this."}
         </EmptyState>
       ) : (
-        <ol className="divide-y divide-ink-800">
+        <ol className="divide-y divide-white/[0.05]">
           {events.map((event, index) => (
             <AuditRow key={event.event_id} event={event} isNewest={index === 0} />
           ))}
@@ -160,7 +166,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
       </button>
 
       {open && (
-        <div className="mt-2 ml-[3.1rem] space-y-2 rounded-lg border border-ink-700 bg-ink-850 p-3">
+        <div className="mt-2 ml-[3.1rem] space-y-2 rounded-lg border border-white/[0.07] bg-white/[0.03] p-3">
           {event.reasons.length > 0 && (
             <ul className="space-y-1">
               {event.reasons.map((reason, i) => (
@@ -171,7 +177,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
             </ul>
           )}
           {checks && (
-            <ol className="space-y-1 border-t border-ink-700 pt-2">
+            <ol className="space-y-1 border-t border-white/[0.07] pt-2">
               {checks.map((check) => (
                 <li key={check.id} className="flex items-start gap-2">
                   <Badge tone={toneForStatus(check.status)} className="mt-px shrink-0">
@@ -184,7 +190,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
               ))}
             </ol>
           )}
-          <div className="border-t border-ink-700 pt-2 text-[10.5px] leading-relaxed">
+          <div className="border-t border-white/[0.07] pt-2 text-[10.5px] leading-relaxed">
             <Mono className="block">prev {shortHash(event.prev_hash, 24)}</Mono>
             <Mono className="block">hash {shortHash(event.hash, 24)}</Mono>
           </div>

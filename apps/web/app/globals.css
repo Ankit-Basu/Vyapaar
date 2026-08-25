@@ -1,39 +1,50 @@
 @import "tailwindcss";
 
 /*
- * AgentMandi control room.
+ * AgentMandi — one visual language for the landing page and the control room.
  *
- * A single dark palette rather than a light/dark pair: this is a live operations
- * view meant to be projected during a demo, and a consistent surface keeps the
- * status colours (pass / gate / fail) reading the same in every room.
+ * Dark by commitment rather than by preference: this is a live operations view
+ * meant to be projected during a demo, and a fixed ground keeps the status
+ * colours (pass / gate / fail) reading identically in every room.
+ *
+ * Surfaces are glass — translucent, blurred, lit from the top edge — over a
+ * slow aurora. The blur is what makes the layering read as depth rather than
+ * as flat panels stacked on a dark rectangle.
  */
 
 @theme {
-  --color-ink-950: #070a10;
-  --color-ink-900: #0b1017;
-  --color-ink-850: #101724;
-  --color-ink-800: #141c2b;
-  --color-ink-700: #1c2637;
-  --color-ink-600: #273248;
-  --color-ink-500: #3a4761;
+  /* Ground: near-black with a cool cast, so the blue accent sits in the same family. */
+  --color-ink-950: #05070d;
+  --color-ink-900: #090d16;
+  --color-ink-850: #0d1220;
+  --color-ink-800: #111829;
+  --color-ink-700: #1a2337;
+  --color-ink-600: #253148;
+  --color-ink-500: #36455f;
 
-  --color-mute-500: #64748b;
-  --color-mute-400: #8195b0;
-  --color-mute-300: #a7b8cf;
-  --color-mute-100: #e6edf7;
+  --color-mute-500: #6b7c96;
+  --color-mute-400: #8ba0bd;
+  --color-mute-300: #b3c3da;
+  --color-mute-200: #d2dcec;
+  --color-mute-100: #edf3fb;
 
-  --color-brand-500: #4f8cff;
-  --color-brand-400: #6ea1ff;
-  --color-brand-glow: #4f8cff26;
+  /* Razorpay's blue, extended into a violet for gradients. */
+  --color-brand-600: #1f6feb;
+  --color-brand-500: #3395ff;
+  --color-brand-400: #5aabff;
+  --color-brand-300: #8cc5ff;
+  --color-violet-500: #8b5cf6;
+  --color-violet-400: #a78bfa;
+  --color-brand-glow: #3395ff26;
 
-  --color-pass-500: #34c07f;
-  --color-pass-bg: #34c07f1f;
-  --color-gate-500: #f0b429;
-  --color-gate-bg: #f0b4291f;
-  --color-fail-500: #f2626b;
-  --color-fail-bg: #f2626b1f;
-  --color-skip-500: #5c6b82;
-  --color-skip-bg: #5c6b8214;
+  --color-pass-500: #2fd48f;
+  --color-pass-bg: #2fd48f1c;
+  --color-gate-500: #f5b32c;
+  --color-gate-bg: #f5b32c1c;
+  --color-fail-500: #ff6b78;
+  --color-fail-bg: #ff6b781c;
+  --color-skip-500: #5f708a;
+  --color-skip-bg: #5f708a14;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
@@ -41,20 +52,139 @@
 
 :root {
   color-scheme: dark;
+  --glass-bg: rgba(255, 255, 255, 0.035);
+  --glass-bg-strong: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
 }
 
-html,
+html {
+  background: var(--color-ink-950);
+}
+
 body {
   background: var(--color-ink-950);
   color: var(--color-mute-100);
-}
-
-body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Thin scrollbars so the dense panels do not lose width to chrome. */
+/* ---------------------------------------------------------------- glass --- */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  /* A hairline of light along the top edge: the thing that makes glass read as
+     glass rather than as a translucent rectangle. */
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 8px 32px -8px rgba(0, 0, 0, 0.6);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 16px 48px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* Gradient text for headline accents. */
+.text-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--color-mute-100) 0%,
+    var(--color-brand-300) 45%,
+    var(--color-violet-400) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A 1px gradient rule that fades at both ends. */
+.rule-fade {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-border) 20%,
+    var(--glass-highlight) 50%,
+    var(--glass-border) 80%,
+    transparent
+  );
+}
+
+/* ------------------------------------------------------------ background --- */
+
+/* Slow-drifting colour behind everything. Fixed, so it does not repaint on scroll. */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.28;
+  will-change: transform;
+}
+.aurora::before {
+  background: radial-gradient(circle, var(--color-brand-600), transparent 65%);
+  top: -20vmax;
+  left: -10vmax;
+  animation: drift-a 28s ease-in-out infinite alternate;
+}
+.aurora::after {
+  background: radial-gradient(circle, var(--color-violet-500), transparent 65%);
+  bottom: -25vmax;
+  right: -12vmax;
+  animation: drift-b 34s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate3d(12vw, 8vh, 0) scale(1.15);
+  }
+}
+@keyframes drift-b {
+  to {
+    transform: translate3d(-10vw, -6vh, 0) scale(1.2);
+  }
+}
+
+/* Fine grain over the gradients, which otherwise band on wide displays. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* A faint grid, to give the hero a sense of plane. */
+.grid-floor {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+
+/* ----------------------------------------------------------- scrollbars --- */
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-ink-600) transparent;
@@ -70,6 +200,8 @@ body {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ----------------------------------------------------------- animations --- */
 
 /* New audit rows arrive at the top of the feed; a brief flash marks them. */
 @keyframes arrive {
@@ -100,9 +232,46 @@ body {
   animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
+/* A light sweeping across a surface, for the hero card. */
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+.animate-sheen {
+  animation: sheen 5.5s ease-in-out infinite;
+}
+
+@keyframes scroll-hint {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+.animate-scroll-hint {
+  animation: scroll-hint 2s ease-in-out infinite;
+}
+
+/*
+ * Reduced motion: kill the ambient loops and let the scroll-driven timelines
+ * render at their end state. The landing page checks this in JS too, so the
+ * story is still fully readable without a single frame of animation.
+ */
 @media (prefers-reduced-motion: reduce) {
   .animate-arrive,
-  .animate-pulse-dot {
-    animation: none;
+  .animate-pulse-dot,
+  .animate-sheen,
+  .animate-scroll-hint,
+  .aurora::before,
+  .aurora::after {
+    animation: none !important;
   }
 }

@@ -23,12 +23,12 @@ export function Panel({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col rounded-xl border border-ink-700 bg-ink-900/70 backdrop-blur",
+        "glass flex min-h-0 flex-col rounded-xl",
         className,
       )}
     >
       {(title || actions) && (
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ink-700 px-4 py-3">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.07] px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate text-[13px] font-semibold tracking-wide text-mute-100">
               {title}
@@ -53,8 +53,8 @@ const buttonStyles = cva(
         primary: "bg-brand-500 text-ink-950 hover:bg-brand-400",
         approve: "bg-pass-500 text-ink-950 hover:brightness-110",
         reject: "border border-fail-500/60 text-fail-500 hover:bg-fail-bg",
-        ghost: "border border-ink-600 text-mute-300 hover:border-ink-500 hover:text-mute-100",
-        subtle: "bg-ink-700 text-mute-200 hover:bg-ink-600",
+        ghost: "border border-white/10 text-mute-300 hover:border-white/25 hover:bg-white/5 hover:text-mute-100",
+        subtle: "bg-white/[0.07] text-mute-200 hover:bg-white/[0.11]",
       },
       size: {
         sm: "h-7 px-2.5 text-[11.5px]",
@@ -84,7 +84,7 @@ const badgeStyles = cva(
         fail: "bg-fail-bg text-fail-500",
         skip: "bg-skip-bg text-skip-500",
         info: "bg-brand-glow text-brand-400",
-        neutral: "bg-ink-700 text-mute-400",
+        neutral: "bg-white/[0.07] text-mute-400",
       },
     },
     defaultVariants: { tone: "neutral" },
@@ -150,7 +150,7 @@ export function Stat({
     neutral: "text-mute-100",
   }[tone];
   return (
-    <div className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2">
+    <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
       <div className="text-[10.5px] font-medium uppercase tracking-wider text-mute-500">
         {label}
       </div>

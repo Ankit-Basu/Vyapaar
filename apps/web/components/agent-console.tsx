@@ -99,7 +99,7 @@ export function AgentConsole({ onActivity }: { onActivity: () => void }) {
         </div>
       ) : (
         <>
-          <div className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2">
+          <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2">
             <div className="flex items-center justify-between gap-2">
               <Mono>{mandate.mandate_id}</Mono>
               <span className="text-[10.5px] text-mute-500">{mandate.buyer_id}</span>
@@ -126,7 +126,7 @@ export function AgentConsole({ onActivity }: { onActivity: () => void }) {
                 onChange={(e) => setGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !busy && go()}
                 placeholder="What should the agent buy?"
-                className="h-9 min-w-0 flex-1 rounded-lg border border-ink-600 bg-ink-950 px-3 text-[12.5px] text-mute-100 placeholder:text-mute-500 focus:border-brand-500 focus:outline-none"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-[12.5px] text-mute-100 placeholder:text-mute-500 focus:border-brand-500 focus:outline-none"
               />
               <Button variant="primary" onClick={go} disabled={busy !== null || !goal.trim()}>
                 {busy === "run" ? (
@@ -147,7 +147,7 @@ export function AgentConsole({ onActivity }: { onActivity: () => void }) {
                     "rounded-md border px-2 py-1 text-[10.5px] transition-colors",
                     goal === s
                       ? "border-brand-500 text-brand-400"
-                      : "border-ink-600 text-mute-500 hover:border-ink-500 hover:text-mute-300",
+                      : "border-white/12 text-mute-500 hover:border-white/25 hover:text-mute-300",
                   )}
                 >
                   {s}
@@ -189,7 +189,7 @@ function Transcript({ run }: { run: AgentRunResult }) {
               ? "border-gate-500/40 bg-gate-bg"
               : run.outcome === "denied" || run.outcome === "error"
                 ? "border-fail-500/40 bg-fail-bg"
-                : "border-ink-700 bg-ink-850",
+                : "border-white/[0.07] bg-white/[0.03]",
         )}
       >
         <Bot size={14} className="mt-0.5 shrink-0 text-mute-400" />
@@ -231,7 +231,7 @@ function Transcript({ run }: { run: AgentRunResult }) {
           href={run.checkout_url}
           target="_blank"
           rel="noreferrer"
-          className="block truncate rounded-lg border border-ink-600 bg-ink-850 px-3 py-2 font-mono text-[11px] text-brand-400 hover:border-brand-500"
+          className="block truncate rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px] text-brand-400 hover:border-brand-500"
         >
           {run.checkout_url}
         </a>
