@@ -110,7 +110,7 @@ export function Hero() {
         <div style={{ perspective: 800 }}>
           <div className="hero-badge glass-flat inline-flex items-center gap-2 rounded-full px-3 py-1.5">
             <Sparkles size={12} className="text-brand-400" />
-            <span className="text-[11.5px] font-medium tracking-wide text-mute-300">
+            <span className="text-[12px] font-medium tracking-wide text-mute-300">
               Razorpay Buildathon · Agent Commerce Layer
             </span>
           </div>
@@ -144,7 +144,7 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard"
-              className="hero-cta lift group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-mute-100 px-5 text-[13.5px] font-semibold text-ink-950 shadow-xl shadow-black/40"
+              className="hero-cta lift group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-mute-100 px-5 text-[14px] font-semibold text-ink-950 shadow-xl shadow-black/40"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Watch an agent buy something
@@ -156,7 +156,7 @@ export function Hero() {
             </Link>
             <a
               href="#guardrails"
-              className="hero-cta glass-flat lift inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-medium text-mute-200 hover:border-white/20 hover:text-white"
+              className="hero-cta glass-flat lift inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[14px] font-medium text-mute-200 hover:border-white/20 hover:text-white"
             >
               <ShieldCheck size={15} className="text-brand-400" />
               See the guardrails
@@ -164,7 +164,7 @@ export function Hero() {
           </div>
 
           {/* Trust badges */}
-          <div className="hero-cta mt-6 flex flex-wrap items-center gap-4 text-[10.5px] text-mute-500">
+          <div className="hero-cta mt-6 flex flex-wrap items-center gap-4 text-[11px] text-mute-500">
             <span className="flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-pass-500" />
               Razorpay test mode
@@ -202,7 +202,7 @@ export function Hero() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Lock size={12} className="text-mute-500" />
-                <span className="font-mono text-[10.5px] text-mute-500">
+                <span className="font-mono text-[11px] text-mute-500">
                   int_9f3a…c21b
                 </span>
               </div>
@@ -213,7 +213,7 @@ export function Hero() {
 
             <div className="mt-4 flex items-baseline justify-between gap-3">
               <div>
-                <div className="text-[13.5px] font-medium text-mute-100">
+                <div className="text-[14px] font-medium text-mute-100">
                   Aurora Wireless Optical Mouse
                 </div>
                 <div className="mt-0.5 text-[11px] text-mute-500">
@@ -232,7 +232,7 @@ export function Hero() {
                     <Check size={9} className="text-pass-500" strokeWidth={3.5} />
                   </span>
                   <span className="min-w-0">
-                    <span className="text-[11.5px] font-medium text-mute-200">{check.id}</span>
+                    <span className="text-[12px] font-medium text-mute-200">{check.id}</span>
                     <span className="block text-[11px] leading-snug text-mute-500">
                       {check.reason}
                     </span>
@@ -242,7 +242,7 @@ export function Hero() {
             </ul>
 
             <div className="mt-4 rounded-lg bg-white/[0.03] px-3 py-2">
-              <p className="text-[10.5px] leading-relaxed text-mute-500">
+              <p className="text-[11px] leading-relaxed text-mute-500">
                 Eight guardrails, in order, every time. The agent never touches the payment
                 service directly.
               </p>

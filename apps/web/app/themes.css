@@ -58,8 +58,8 @@
   --color-mute-100: #fef3c7;
   --color-mute-200: #fde68a;
   --color-mute-300: #d97706;
-  --color-mute-400: #b45309;
-  --color-mute-500: #92400e;
+  --color-mute-400: #ba611d;
+  --color-mute-500: #a96841;
 }
 
 [data-theme="amethyst-haze"],
@@ -86,7 +86,7 @@
   --color-mute-200: #e9d5ff;
   --color-mute-300: #c084fc;
   --color-mute-400: #a855f7;
-  --color-mute-500: #7e22ce;
+  --color-mute-500: #9c55d9;
 }
 
 [data-theme="bold-tech"] {
@@ -111,8 +111,8 @@
   --color-mute-100: #f8fafc;
   --color-mute-200: #e2e8f0;
   --color-mute-300: #94a3b8;
-  --color-mute-400: #64748b;
-  --color-mute-500: #475569;
+  --color-mute-400: #6a7a90;
+  --color-mute-500: #6e7988;
 }
 
 [data-theme="bubblegum"] {
@@ -137,8 +137,8 @@
   --color-mute-100: #fdf2f8;
   --color-mute-200: #fce7f3;
   --color-mute-300: #f472b6;
-  --color-mute-400: #db2777;
-  --color-mute-500: #9d174d;
+  --color-mute-400: #dc307c;
+  --color-mute-500: #b8587f;
 }
 
 [data-theme="caffeine"] {
@@ -163,8 +163,8 @@
   --color-mute-100: #fef3c7;
   --color-mute-200: #fde68a;
   --color-mute-300: #d97706;
-  --color-mute-400: #92400e;
-  --color-mute-500: #78350f;
+  --color-mute-400: #a96841;
+  --color-mute-500: #9e6e52;
 }
 
 [data-theme="candyland"] {
@@ -190,7 +190,7 @@
   --color-mute-200: #ffe4e6;
   --color-mute-300: #fda4af;
   --color-mute-400: #fb7185;
-  --color-mute-500: #e11d48;
+  --color-mute-500: #e32b53;
 }
 
 [data-theme="catppuccin"] {
@@ -216,7 +216,7 @@
   --color-mute-200: #bac2de;
   --color-mute-300: #a6adc8;
   --color-mute-400: #9399b2;
-  --color-mute-500: #6c7086;
+  --color-mute-500: #797d91;
 }
 
 [data-theme="claude"] {
@@ -242,7 +242,7 @@
   --color-mute-200: #ffedd5;
   --color-mute-300: #fed7aa;
   --color-mute-400: #ea580c;
-  --color-mute-500: #9a3412;
+  --color-mute-500: #b16349;
 }
 
 [data-theme="claymorphism"] {
@@ -267,8 +267,8 @@
   --color-mute-100: #f8fafc;
   --color-mute-200: #e2e8f0;
   --color-mute-300: #94a3b8;
-  --color-mute-400: #64748b;
-  --color-mute-500: #475569;
+  --color-mute-400: #6c7b91;
+  --color-mute-500: #717c8c;
 }
 
 [data-theme="clean-slate"] {
@@ -293,8 +293,8 @@
   --color-mute-100: #f0f6fc;
   --color-mute-200: #c9d1d9;
   --color-mute-300: #8b949e;
-  --color-mute-400: #6e7681;
-  --color-mute-500: #484f58;
+  --color-mute-400: #717984;
+  --color-mute-500: #747980;
 }
 
 [data-theme="cosmic-night"] {
@@ -320,7 +320,7 @@
   --color-mute-200: #ede9fe;
   --color-mute-300: #c4b5fd;
   --color-mute-400: #8b5cf6;
-  --color-mute-500: #6d28d9;
+  --color-mute-500: #8f59e2;
 }
 
 [data-theme="crimson"] {
@@ -346,7 +346,7 @@
   --color-mute-200: #ffe4e6;
   --color-mute-300: #fda4af;
   --color-mute-400: #f43f5e;
-  --color-mute-500: #be123c;
+  --color-mute-500: #cc4667;
 }
 
 [data-theme="cyberpunk"],
@@ -400,7 +400,7 @@
   --color-mute-200: #d1fae5;
   --color-mute-300: #6ee7b7;
   --color-mute-400: #10b981;
-  --color-mute-500: #047857;
+  --color-mute-500: #208769;
 }
 
 [data-theme="frost"],
@@ -454,7 +454,7 @@
   --color-mute-200: #fef9c3;
   --color-mute-300: #facc15;
   --color-mute-400: #ca8a04;
-  --color-mute-500: #854d0e;
+  --color-mute-500: #9c6f3c;
 }
 
 [data-theme="graphite"],
@@ -480,8 +480,8 @@
   --color-mute-100: #fafafa;
   --color-mute-200: #e4e4e7;
   --color-mute-300: #a1a1aa;
-  --color-mute-400: #71717a;
-  --color-mute-500: #52525b;
+  --color-mute-400: #787881;
+  --color-mute-500: #78787f;
 }
 
 [data-theme="kodama-grove"],
@@ -534,7 +534,7 @@
   --color-mute-200: #ede9fe;
   --color-mute-300: #c4b5fd;
   --color-mute-400: #818cf8;
-  --color-mute-500: #4f46e5;
+  --color-mute-500: #6d65e9;
 }
 
 [data-theme="mocha-mousse"] {
@@ -560,7 +560,7 @@
   --color-mute-200: #ede0d4;
   --color-mute-300: #ddb892;
   --color-mute-400: #b08968;
-  --color-mute-500: #7f5539;
+  --color-mute-500: #95725b;
 }
 
 [data-theme="modern-minimal"] {
@@ -585,8 +585,8 @@
   --color-mute-100: #f8fafc;
   --color-mute-200: #e2e8f0;
   --color-mute-300: #94a3b8;
-  --color-mute-400: #64748b;
-  --color-mute-500: #475569;
+  --color-mute-400: #6a7a90;
+  --color-mute-500: #6e7988;
 }
 
 [data-theme="neo-brutalism"] {
@@ -611,8 +611,8 @@
   --color-mute-100: #ffffff;
   --color-mute-200: #e0e0e0;
   --color-mute-300: #a0a0a0;
-  --color-mute-400: #707070;
-  --color-mute-500: #505050;
+  --color-mute-400: #797979;
+  --color-mute-500: #787878;
 }
 
 [data-theme="northern-lights"] {
@@ -638,7 +638,7 @@
   --color-mute-200: #ccfbf1;
   --color-mute-300: #5eead4;
   --color-mute-400: #14b8a6;
-  --color-mute-500: #0f766e;
+  --color-mute-500: #29857e;
 }
 
 [data-theme="ocean-breeze"] {
@@ -690,7 +690,7 @@
   --color-mute-200: #f3e8ff;
   --color-mute-300: #d8b4fe;
   --color-mute-400: #c084fc;
-  --color-mute-500: #9333ea;
+  --color-mute-500: #a04bed;
 }
 
 [data-theme="perpetuity"] {
@@ -742,7 +742,7 @@
   --color-mute-200: #fae8ff;
   --color-mute-300: #f0abfc;
   --color-mute-400: #e879f9;
-  --color-mute-500: #c026d3;
+  --color-mute-500: #c32fd5;
 }
 
 [data-theme="razorpay"] {
@@ -796,7 +796,7 @@
   --color-mute-200: #ffe4e6;
   --color-mute-300: #fda4af;
   --color-mute-400: #f43f5e;
-  --color-mute-500: #be123c;
+  --color-mute-500: #cc4667;
 }
 
 [data-theme="sunset"] {
@@ -822,5 +822,5 @@
   --color-mute-200: #ffedd5;
   --color-mute-300: #fdba74;
   --color-mute-400: #f97316;
-  --color-mute-500: #c2410c;
+  --color-mute-500: #c85424;
 }

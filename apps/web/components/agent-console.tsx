@@ -233,7 +233,7 @@ export function AgentConsole({
 
 
       {error && (
-        <p className="rounded-lg border border-fail-500/40 bg-fail-bg px-3 py-2 text-[11.5px] leading-relaxed text-fail-500">
+        <p className="rounded-lg border border-fail-500/40 bg-fail-bg px-3 py-2 text-[12px] leading-relaxed text-fail-500">
           {error}
         </p>
       )}
@@ -297,7 +297,7 @@ function Transcript({ run }: { run: AgentRunResult }) {
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
             <Badge tone={toneForStatus(run.outcome)}>{run.outcome.replace(/_/g, " ")}</Badge>
-            <span className="text-[10.5px] text-mute-500">
+            <span className="text-[11px] text-mute-500">
               planner: {run.planner} · {run.attempts} attempt{run.attempts === 1 ? "" : "s"}
             </span>
           </div>
@@ -333,7 +333,7 @@ function Transcript({ run }: { run: AgentRunResult }) {
               <Badge tone={tone} className="w-[4.6rem] shrink-0 justify-center">
                 {STEP_LABEL[step.action] ?? step.action}
               </Badge>
-              <span className="text-[11.5px] leading-relaxed text-mute-400">{step.thought}</span>
+              <span className="text-[12px] leading-relaxed text-mute-400">{step.thought}</span>
             </li>
           );
         })}

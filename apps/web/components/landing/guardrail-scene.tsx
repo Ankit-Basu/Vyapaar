@@ -143,7 +143,7 @@ export function GuardrailScene() {
               <br />
               <span className="text-gradient">an agent and your money.</span>
             </h2>
-            <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-mute-400">
+            <p className="mt-5 max-w-md text-[14px] leading-relaxed text-mute-400">
               Every purchase intent runs the same ordered gauntlet. The first failure denies it,
               and the remaining checks are recorded as skipped rather than quietly dropped — so
               the trail shows exactly how far evaluation got, and why it stopped.
@@ -151,7 +151,7 @@ export function GuardrailScene() {
 
             <div className="gr-card glass-flat-strong mt-8 rounded-2xl p-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-mute-500">
+                <span className="flex items-center gap-1.5 font-mono text-[11px] text-mute-500">
                   <Lock size={11} />
                   purchase intent
                 </span>
@@ -198,7 +198,7 @@ export function GuardrailScene() {
                       <span className="text-[13px] font-medium text-mute-200">{check.name}</span>
                     </div>
                     <div className="gr-reason">
-                      <p className="pt-0.5 text-[11.5px] leading-snug text-mute-500">
+                      <p className="pt-0.5 text-[12px] leading-snug text-mute-500">
                         {check.reason}
                       </p>
                     </div>
@@ -209,7 +209,7 @@ export function GuardrailScene() {
 
             <div className="gr-verdict glass-flat mt-6 flex items-center gap-3 rounded-xl px-4 py-3">
               <ShieldCheck size={16} className="shrink-0 text-pass-500" />
-              <p className="text-[12.5px] leading-relaxed text-mute-300">
+              <p className="text-[13px] leading-relaxed text-mute-300">
                 All eight passed. Only now may the payment service open a Razorpay order — and
                 the purchase still will not settle until a webhook arrives whose signature
                 verifies.

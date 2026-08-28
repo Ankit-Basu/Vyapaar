@@ -106,7 +106,7 @@ export function AuditScene() {
               <br />
               <span className="text-gradient">Editing one breaks all of them.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-[14.5px] leading-relaxed text-mute-400">
+            <p className="mx-auto mt-5 max-w-xl text-[14px] leading-relaxed text-mute-400">
               Each row hashes its own contents together with the hash before it. The log is
               append-only in SQLite itself — <code className="font-mono text-[13px] text-brand-300">UPDATE</code>{" "}
               and <code className="font-mono text-[13px] text-brand-300">DELETE</code> are blocked
@@ -122,7 +122,7 @@ export function AuditScene() {
                   className={`ac-block ac-block-${index} glass-flat relative flex-1 rounded-xl px-3.5 py-3`}
                 >
                   {index === 2 && (
-                    <span className="ac-tamper-badge absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-fail-500 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-ink-950 uppercase whitespace-nowrap">
+                    <span className="ac-tamper-badge absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-fail-500 px-2 py-0.5 text-[10px] font-bold tracking-wider text-ink-950 uppercase whitespace-nowrap">
                       edited
                     </span>
                   )}
@@ -130,7 +130,7 @@ export function AuditScene() {
                     <span className="font-mono text-[10px] text-mute-500">#{block.seq}</span>
                     <Link2 size={9} className="text-mute-500" />
                   </div>
-                  <div className="mt-1 truncate text-[11.5px] font-medium text-mute-200">
+                  <div className="mt-1 truncate text-[12px] font-medium text-mute-200">
                     {block.label}
                   </div>
                   <div
@@ -138,7 +138,7 @@ export function AuditScene() {
                   >
                     {block.amount}
                   </div>
-                  <div className="mt-2 truncate font-mono text-[9.5px] text-mute-500">
+                  <div className="mt-2 truncate font-mono text-[10px] text-mute-500">
                     {block.hash}…
                   </div>
                 </div>
@@ -158,14 +158,14 @@ export function AuditScene() {
           <div className="relative mt-10 flex h-16 items-start justify-center">
             <div className="ac-verdict-ok glass-flat absolute flex items-center gap-2.5 rounded-xl px-4 py-2.5">
               <ShieldCheck size={15} className="text-pass-500" />
-              <span className="text-[12.5px] text-mute-300">
+              <span className="text-[13px] text-mute-300">
                 <span className="font-mono text-pass-500">valid: true</span> — all 5 entries chain
                 cleanly from genesis.
               </span>
             </div>
             <div className="ac-verdict-bad glass-flat absolute flex max-w-lg items-start gap-2.5 rounded-xl border-fail-500/40 px-4 py-2.5">
               <AlertTriangle size={15} className="mt-0.5 shrink-0 text-fail-500" />
-              <span className="text-[12.5px] leading-relaxed text-mute-300">
+              <span className="text-[13px] leading-relaxed text-mute-300">
                 <span className="font-mono text-fail-500">broken_at_seq: 3</span> — row 3&rsquo;s
                 content no longer matches its stored hash, and every row after it is invalidated.
                 The trail cannot be edited quietly.

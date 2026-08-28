@@ -99,7 +99,7 @@ export function LiveMetrics({
               size={38}
               stroke={3.5}
             >
-              <span className="font-mono text-[9.5px] font-semibold text-mute-200">
+              <span className="font-mono text-[10px] font-semibold text-mute-200">
                 {m.checkTotal === 0 ? "—" : `${Math.round((m.passed / m.checkTotal) * 100)}%`}
               </span>
             </Ring>
@@ -179,10 +179,13 @@ function Tile({
       className="glass-surface glass-d2 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] p-3.5 shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.18] hover:shadow-xl"
       style={{ "--accent": TONE_COLOR[tone] } as CSSProperties}
     >
-      {/* Ambient background glow */}
+      {/* Ambient background glow. Sits deliberately outside the tile and is
+          clipped by its overflow-hidden, so the falloff reads as light rather
+          than as a circle. Decorative only — never announced. */}
       <div
         className="pointer-events-none absolute -top-10 -right-10 size-24 rounded-full opacity-20 blur-xl transition-opacity duration-300 group-hover:opacity-40"
         style={{ background: TONE_COLOR[tone] }}
+        aria-hidden
       />
 
       <div className="relative flex items-center justify-between">
@@ -208,7 +211,7 @@ function Tile({
 
       {children}
 
-      <div className="relative mt-2 truncate text-[10.5px] leading-tight text-mute-400">
+      <div className="relative mt-2 truncate text-[11px] leading-tight text-mute-400">
         {footnote}
       </div>
     </div>

@@ -84,7 +84,7 @@ export function StatStrip() {
             >
               {stat.value}
             </div>
-            <div className="mt-1 text-[11.5px] leading-tight text-mute-500">{stat.label}</div>
+            <div className="mt-1 text-[12px] leading-tight text-mute-500">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -203,7 +203,7 @@ export function Mandate() {
         <div style={{ perspective: 1000 }}>
           <div className="scope-card glass-flat-strong rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-[10.5px] text-mute-500">
+              <span className="font-mono text-[11px] text-mute-500">
                 JWT · HS256 · agentmandi.mandate.v1
               </span>
               <span className="rounded-md bg-brand-glow px-2 py-0.5 text-[10px] font-bold tracking-wider text-brand-400 uppercase">
@@ -225,7 +225,7 @@ export function Mandate() {
                       {row.value}
                     </span>
                   </span>
-                  <span className="hidden shrink-0 text-[10.5px] text-mute-500 sm:block">
+                  <span className="hidden shrink-0 text-[11px] text-mute-500 sm:block">
                     {row.note}
                   </span>
                 </li>
@@ -298,7 +298,7 @@ export function Failure() {
               </span>
             </div>
             <div className="mt-3.5 flex items-baseline justify-between gap-3">
-              <span className="text-[13.5px] font-medium text-mute-100">
+              <span className="text-[14px] font-medium text-mute-100">
                 Nimbus TKL Mechanical Keyboard
               </span>
               <span className="font-mono text-[16px] font-semibold tabular-nums text-mute-300">
@@ -329,7 +329,7 @@ export function Failure() {
               </span>
             </div>
             <div className="mt-3.5 flex items-baseline justify-between gap-3">
-              <span className="text-[13.5px] font-medium text-mute-100">
+              <span className="text-[14px] font-medium text-mute-100">
                 Nimbus Wireless Keyboard
               </span>
               <span className="font-mono text-[16px] font-semibold tabular-nums text-mute-300">
@@ -365,8 +365,8 @@ export function Failure() {
               key={item.t}
               className="lift rounded-xl border border-white/[0.05] bg-white/[0.025] px-4 py-3.5 hover:border-white/15 hover:bg-white/[0.04]"
             >
-              <h3 className="text-[12.5px] font-semibold text-mute-200">{item.t}</h3>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-mute-500">{item.b}</p>
+              <h3 className="text-[13px] font-semibold text-mute-200">{item.t}</h3>
+              <p className="mt-1 text-[12px] leading-relaxed text-mute-500">{item.b}</p>
             </div>
           ))}
         </Reveal>
@@ -441,7 +441,7 @@ export function Mcp() {
               ].map((tool) => (
                 <span
                   key={tool}
-                  className="lift rounded-md border border-white/[0.04] bg-white/[0.04] px-2 py-1 font-mono text-[10.5px] text-mute-400 hover:border-brand-500/40 hover:text-brand-300"
+                  className="lift rounded-md border border-white/[0.04] bg-white/[0.04] px-2 py-1 font-mono text-[11px] text-mute-400 hover:border-brand-500/40 hover:text-brand-300"
                 >
                   {tool}
                 </span>
@@ -453,7 +453,7 @@ export function Mcp() {
         <div className="term glass-flat-strong overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-2.5">
             <Terminal size={12} className="text-mute-500" />
-            <span className="font-mono text-[10.5px] text-mute-500">
+            <span className="font-mono text-[11px] text-mute-500">
               claude desktop · agentmandi
             </span>
             <span className="ml-auto flex gap-1.5">
@@ -467,7 +467,7 @@ export function Mcp() {
               <p
                 key={i}
                 className={cn(
-                  "term-line font-mono text-[11.5px] leading-relaxed break-words",
+                  "term-line font-mono text-[12px] leading-relaxed break-words",
                   line.kind === "prompt" && "text-mute-100",
                   line.kind === "tool" && "text-brand-300",
                   line.kind === "out" && "text-mute-500",
@@ -531,11 +531,11 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row sm:px-8">
         <div className="flex items-center gap-2.5">
           <Mark className="size-6 text-[11px]" />
-          <span className="text-[12.5px] text-mute-400">
+          <span className="text-[13px] text-mute-400">
             AgentMandi — an agent commerce layer
           </span>
         </div>
-        <p className="text-center text-[11.5px] text-mute-500 sm:text-right">
+        <p className="text-center text-[12px] text-mute-500 sm:text-right">
           Razorpay <strong className="font-medium text-mute-400">test mode only</strong>. No real
           money moves, and the config refuses any key that is not <code className="font-mono">rzp_test_*</code>.
         </p>

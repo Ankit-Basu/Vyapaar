@@ -43,7 +43,7 @@ export function MandatesPanel({
       bodyClassName="p-3 space-y-2"
       actions={
         mandates.length > 0 ? (
-          <span className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[10.5px] text-mute-400">
+          <span className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-mute-400">
             {live}/{mandates.length} live
           </span>
         ) : null
@@ -94,7 +94,7 @@ function BudgetMeter({ mandate }: { mandate: MandateRecord }) {
             <span className="truncate text-[13px] font-semibold text-mute-100">
               {mandate.label ?? mandate.buyer_id}
             </span>
-            <span className="shrink-0 font-mono text-[12.5px] font-semibold text-mute-200">
+            <span className="shrink-0 font-mono text-[13px] font-semibold text-mute-200">
               <CountUp value={available} format={(n) => formatPaise(Math.round(n))} /> <span className="font-normal text-[11px] text-mute-400">left</span>
             </span>
           </div>
@@ -135,8 +135,8 @@ function BudgetMeter({ mandate }: { mandate: MandateRecord }) {
         </div>
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-white/[0.06] pt-2 text-[10.5px] text-mute-400">
-        <Mono className="text-[10.5px] text-brand-300 font-medium">{mandate.mandate_id}</Mono>
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-white/[0.06] pt-2 text-[11px] text-mute-400">
+        <Mono className="text-[11px] text-brand-300 font-medium">{mandate.mandate_id}</Mono>
         <span>·</span>
         <span className="text-mute-300">{mandate.allowed_categories.join(", ")}</span>
         {mandate.revoked_at ? (

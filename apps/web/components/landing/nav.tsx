@@ -87,7 +87,7 @@ export function Nav() {
                 onClick={smoothTo(link.href)}
                 aria-current={active === link.href ? "true" : undefined}
                 className={cn(
-                  "u-focus-ring relative rounded-lg px-2.5 py-1.5 text-[12.5px] transition-colors",
+                  "u-focus-ring relative rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
                   active === link.href
                     ? "text-heading"
                     : "text-caption hover:bg-white/[0.05] hover:text-body",
@@ -123,7 +123,7 @@ export function Nav() {
             </a>
             <Link
               href="/dashboard"
-              className="u-focus-ring skeu skeu-gloss group inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[12.5px] font-semibold text-canvas"
+              className="u-focus-ring skeu skeu-gloss group inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-canvas"
               style={{ background: "var(--color-accent)" }}
             >
               Open the dashboard

@@ -42,7 +42,7 @@ export default function Dashboard() {
   const refreshKey = tick + events.length;
 
   return (
-    <main className="relative flex h-dvh flex-col gap-3 overflow-hidden p-3">
+    <main className="relative flex h-dvh flex-col gap-3.5 overflow-hidden p-3.5 xl:gap-5 xl:p-5">
       <MoltenBackground opacity={0.55} speed={0.18} scale={5} />
 
       <Header onReset={bump} refreshKey={refreshKey} connection={connection} />
@@ -54,8 +54,8 @@ export default function Dashboard() {
        * the grid holds still as data arrives and no column ends in dead space.
        * Every panel scrolls internally, so the weights never cause a clip.
        */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className="flex min-h-0 flex-col gap-3 lg:col-span-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 lg:grid-cols-12 xl:gap-5">
+        <div className="flex min-h-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-[1.15]" />
           <ScenarioRunner onActivity={bump} className="flex-1" />
         </div>
@@ -110,7 +110,7 @@ function Header({
   }
 
   return (
-    <header className="glass-surface glass-d3 relative z-40 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2.5 rounded-2xl border border-white/[0.09] px-4.5 py-3 shadow-xl backdrop-blur-2xl">
+    <header className="glass-surface glass-d3 relative z-40 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2.5 rounded-2xl border border-white/[0.09] px-5 py-3 shadow-xl backdrop-blur-2xl">
       {/* Animated top accent line */}
       <div
         className="absolute inset-x-0 top-0 h-px rounded-t-2xl"
@@ -131,9 +131,9 @@ function Header({
           />
         </span>
         <span>
-          <h1 className="flex items-center gap-2 text-[14.5px] leading-tight font-semibold tracking-tight text-mute-100">
+          <h1 className="flex items-center gap-2 text-[14px] leading-tight font-semibold tracking-tight text-mute-100">
             AgentMandi
-            <span className="rounded-md border border-brand-500/30 bg-brand-500/15 px-1.5 py-0.5 text-[8.5px] font-bold tracking-[0.14em] text-brand-300 uppercase">
+            <span className="rounded-md border border-brand-500/30 bg-brand-500/15 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-brand-300 uppercase">
               control room
             </span>
           </h1>
@@ -144,13 +144,13 @@ function Header({
       </Link>
 
       {offline ? (
-        <span className="flex items-center gap-1.5 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-1.5 text-[11.5px] font-medium text-fail-500 shadow-sm">
+        <span className="flex items-center gap-1.5 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-1.5 text-[12px] font-medium text-fail-500 shadow-sm">
           <CircleAlert size={13} />
           API unreachable at {API_BASE}
         </span>
       ) : (
         health && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-stretch divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-white/[0.02]">
             <Chip
               icon={CreditCard}
               label="payments"
@@ -235,10 +235,12 @@ function Chip({
   }[tone];
 
   return (
-    <span className="lift flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 backdrop-blur-md transition-colors hover:border-white/20 hover:bg-white/[0.06]">
-      <Icon size={12} className="shrink-0 text-mute-400" />
+    <span className="flex items-center gap-2 px-3 py-1.5 transition-colors first:rounded-l-xl last:rounded-r-xl hover:bg-white/[0.04]">
+      <Icon size={12} className="shrink-0 text-mute-500" />
       <span className="flex flex-col leading-tight">
-        <span className="text-[8.5px] font-medium tracking-[0.14em] text-mute-500 uppercase">{label}</span>
+        <span className="text-[10px] font-medium tracking-[0.14em] text-mute-500 uppercase">
+          {label}
+        </span>
         <span className={cn("text-[11px]", valueTone)}>{value}</span>
       </span>
     </span>

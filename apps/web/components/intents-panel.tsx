@@ -218,7 +218,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
                     </Badge>
                     <span className="text-[12px] leading-relaxed text-mute-300">
                       <span className="font-semibold text-mute-100">{check.name}</span>
-                      <span className="block text-[11.5px] text-mute-400">{check.reason}</span>
+                      <span className="block text-[12px] text-mute-400">{check.reason}</span>
                     </span>
                   </li>
                 ))}
@@ -272,7 +272,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
 
             {intent.status === "APPROVED" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
-                <span className="flex-1 text-[11.5px] leading-relaxed text-mute-400">
+                <span className="flex-1 text-[12px] leading-relaxed text-mute-400">
                   Approved and awaiting payment. It becomes PAID only when a webhook with a valid
                   signature arrives.
                 </span>
@@ -306,7 +306,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
             )}
 
             {note && (
-              <p className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[11.5px] leading-relaxed text-mute-300">
+              <p className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[12px] leading-relaxed text-mute-300">
                 {note}
               </p>
             )}

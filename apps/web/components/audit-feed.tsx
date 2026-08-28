@@ -88,7 +88,7 @@ export function AuditFeed({
           {chain && (
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold",
+                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
                 chain.valid ? "bg-pass-bg text-pass-500" : "bg-fail-bg text-fail-500",
               )}
               title={chain.detail}
@@ -99,7 +99,7 @@ export function AuditFeed({
           )}
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold",
+              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
               connection === "live" && "bg-pass-bg text-pass-500",
               connection === "connecting" && "bg-gate-bg text-gate-500",
               connection === "offline" && "bg-fail-bg text-fail-500",
@@ -226,7 +226,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
             {event.reasons.length > 0 && (
               <ul className="space-y-1">
                 {event.reasons.map((reason, i) => (
-                  <li key={i} className="text-[11.5px] leading-relaxed text-mute-300">
+                  <li key={i} className="text-[12px] leading-relaxed text-mute-300">
                     {reason}
                   </li>
                 ))}
@@ -239,14 +239,14 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
                     <Badge tone={toneForStatus(check.status)} className="mt-px shrink-0">
                       {check.status}
                     </Badge>
-                    <span className="text-[11.5px] leading-relaxed text-mute-400">
+                    <span className="text-[12px] leading-relaxed text-mute-400">
                       <span className="font-medium text-mute-300">{check.id}</span> — {check.reason}
                     </span>
                   </li>
                 ))}
               </ol>
             )}
-            <div className="border-t border-white/[0.07] pt-2 text-[10.5px] leading-relaxed">
+            <div className="border-t border-white/[0.07] pt-2 text-[11px] leading-relaxed">
               <Mono className="block">prev {shortHash(event.prev_hash, 24)}</Mono>
               <Mono className="block">hash {shortHash(event.hash, 24)}</Mono>
             </div>

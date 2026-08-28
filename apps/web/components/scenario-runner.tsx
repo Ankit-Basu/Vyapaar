@@ -95,7 +95,7 @@ export function ScenarioRunner({
       actions={
         scenarios.length > 0 ? (
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10.5px] text-mute-500">
+            <span className="font-mono text-[11px] text-mute-500">
               {done}/{scenarios.length}
             </span>
             <Button size="sm" variant="subtle" onClick={runAll} disabled={locked}>
@@ -116,7 +116,7 @@ export function ScenarioRunner({
       }
     >
       {error && (
-        <p className="rounded-lg border border-fail-500/40 bg-fail-bg px-3 py-2 text-[11.5px] text-fail-500">
+        <p className="rounded-lg border border-fail-500/40 bg-fail-bg px-3 py-2 text-[12px] text-fail-500">
           {error}
         </p>
       )}
@@ -188,7 +188,7 @@ export function ScenarioRunner({
                       {scenario.watch_for.map((item, i) => (
                         <li
                           key={i}
-                          className="flex gap-2 text-[11.5px] leading-relaxed text-mute-400"
+                          className="flex gap-2 text-[12px] leading-relaxed text-mute-400"
                         >
                           <span className="text-brand-400 font-bold">→</span>
                           {item}
