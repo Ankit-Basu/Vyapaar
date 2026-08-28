@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+import time
 from typing import Any, Protocol
 
 import httpx
@@ -87,38 +89,144 @@ class GeminiClient:
         return _extract_json(text)
 
 
+class _KeyPool:
+    """Round-robin over several API keys, skipping any that are cooling off.
+
+    Groq's free tier is generous per key but easy to exhaust: a "Run all" of the
+    seven demo scenarios fires a burst of planner calls, and one 429 mid-demo
+    drops the agent back to the deterministic planner in front of an audience.
+    Spreading the burst over several keys and parking a rate-limited one for as
+    long as the server asks avoids that without any retry storm.
+    """
+
+    #: Fallback park time when the response carries no `retry-after`.
+    DEFAULT_COOLDOWN = 45.0
+
+    def __init__(self, keys: list[str]) -> None:
+        self._keys = keys
+        self._cool_until = [0.0] * len(keys)
+        self._next = 0
+        self._lock = threading.Lock()
+
+    def __len__(self) -> int:
+        return len(self._keys)
+
+    def order(self) -> list[int]:
+        """Indices to try for one call: warm keys first, then any that are cooling.
+
+        Rotating the starting point rather than always beginning at zero is what
+        actually spreads load -- otherwise the first key absorbs every request
+        and the others only ever see traffic after it has already been limited.
+        """
+        now = time.monotonic()
+        with self._lock:
+            start = self._next
+            self._next = (self._next + 1) % len(self._keys)
+            cool = list(self._cool_until)
+        rotated = [(start + offset) % len(self._keys) for offset in range(len(self._keys))]
+        warm = [i for i in rotated if cool[i] <= now]
+        # Cooling keys still get tried last: a stale cooldown is better than no answer.
+        return warm + [i for i in rotated if cool[i] > now]
+
+    def key(self, index: int) -> str:
+        return self._keys[index]
+
+    def penalise(self, index: int, seconds: float | None) -> None:
+        with self._lock:
+            self._cool_until[index] = time.monotonic() + (seconds or self.DEFAULT_COOLDOWN)
+
+    def available(self) -> int:
+        now = time.monotonic()
+        with self._lock:
+            return sum(1 for until in self._cool_until if until <= now)
+
+
+def _retry_after_seconds(response: httpx.Response) -> float | None:
+    """Groq reports its reset window; honour it rather than guessing."""
+    for header in ("retry-after", "x-ratelimit-reset-requests", "x-ratelimit-reset-tokens"):
+        raw = response.headers.get(header)
+        if not raw:
+            continue
+        try:
+            return float(raw.rstrip("s"))
+        except ValueError:
+            continue
+    return None
+
+
 class GroqClient:
     provider = "groq"
 
     def __init__(self) -> None:
         settings = get_settings()
-        if not settings.groq_api_key:
+        keys = settings.groq_api_keys
+        if not keys:
             raise LLMUnavailable("GROQ_API_KEY is not set")
         self.model = settings.effective_llm_model
-        self._key = settings.groq_api_key
+        self._pool = _KeyPool(keys)
         self._timeout = settings.llm_timeout_seconds
 
+    @property
+    def key_count(self) -> int:
+        return len(self._pool)
+
     def complete_json(self, *, system: str, user: str) -> dict[str, Any]:
-        try:
-            response = httpx.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {self._key}"},
-                json={
-                    "model": self.model,
-                    "messages": [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    "temperature": 0.2,
-                },
-                timeout=self._timeout,
-            )
-            response.raise_for_status()
-            text = response.json()["choices"][0]["message"]["content"]
-        except (httpx.HTTPError, KeyError, IndexError) as exc:
-            raise LLMUnavailable(f"Groq call failed: {exc}") from exc
-        return _extract_json(text)
+        body = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.2,
+        }
+
+        last_error: str = "no key was tried"
+        for index in self._pool.order():
+            try:
+                response = httpx.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {self._pool.key(index)}"},
+                    json=body,
+                    timeout=self._timeout,
+                )
+            except httpx.HTTPError as exc:
+                last_error = f"transport error: {exc}"
+                self._pool.penalise(index, 10.0)
+                continue
+
+            if response.status_code == 429:
+                wait = _retry_after_seconds(response)
+                # Never log the key itself, only which slot it occupies.
+                log.info("groq key %d rate-limited; rotating (reset in %ss)", index, wait)
+                self._pool.penalise(index, wait)
+                last_error = "rate limited"
+                continue
+
+            if response.status_code in (401, 403):
+                # A bad key never recovers on its own, so park it for a long time
+                # rather than burning a request on it every call.
+                log.warning("groq key %d rejected (%d); parking it", index, response.status_code)
+                self._pool.penalise(index, 3600.0)
+                last_error = f"key rejected ({response.status_code})"
+                continue
+
+            if response.status_code >= 500:
+                self._pool.penalise(index, 15.0)
+                last_error = f"groq {response.status_code}"
+                continue
+
+            if response.status_code >= 400:
+                # A malformed request fails identically on every key, so rotating
+                # would just multiply one bug into N wasted calls.
+                raise LLMUnavailable(f"Groq rejected the request ({response.status_code})")
+
+            try:
+                return _extract_json(response.json()["choices"][0]["message"]["content"])
+            except (KeyError, IndexError, ValueError) as exc:
+                raise LLMUnavailable(f"Groq returned an unusable body: {exc}") from exc
+
+        raise LLMUnavailable(f"All {len(self._pool)} Groq key(s) failed: {last_error}")
 
 
 class OllamaClient:
@@ -181,5 +289,10 @@ def describe_llm() -> dict[str, Any]:
             "demo is reproducible offline. Set GEMINI_API_KEY or GROQ_API_KEY to use a model."
             if provider == "offline"
             else f"Buyer agent reasoning is driven by {provider}."
+        ),
+        **(
+            {"groq_key_pool": len(settings.groq_api_keys)}
+            if provider == "groq"
+            else {}
         ),
     }

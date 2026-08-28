@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "./design-system.css";
+@import "./themes.css";
+/* The Studio material system. Additive for now: the landing page and control
+   room still run on the tokens above until they are migrated. */
+@import "./studio.css";
 
 /*
  * AgentMandi — one visual language for the landing page and the control room.
@@ -118,17 +123,35 @@ body {
   backdrop-filter: blur(18px);
 }
 
-/* Gradient text for headline accents. */
+/* Gradient text for headline accents — wider ramp, more vivid. */
 .text-gradient {
   background: linear-gradient(
-    100deg,
+    105deg,
     var(--color-mute-100) 0%,
-    var(--color-brand-300) 45%,
-    var(--color-violet-400) 100%
+    var(--color-brand-400) 30%,
+    var(--color-violet-400) 60%,
+    var(--color-brand-300) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Animated shimmer on gradient text. */
+.text-gradient-shimmer {
+  background: linear-gradient(
+    105deg,
+    var(--color-mute-100) 0%,
+    var(--color-brand-400) 25%,
+    var(--color-violet-400) 50%,
+    var(--color-brand-300) 75%,
+    var(--color-mute-100) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shimmer 4s ease-in-out infinite;
 }
 
 /* A 1px gradient rule that fades at both ends. */
@@ -142,6 +165,95 @@ body {
     var(--glass-border) 80%,
     transparent
   );
+}
+
+/* Animated gradient border — wraps a pseudo-element with a spinning conic gradient. */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    var(--color-brand-500),
+    var(--color-violet-400),
+    var(--color-brand-300),
+    var(--color-brand-500)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  animation: spin-border 6s linear infinite;
+}
+
+/* Glow pulse for status indicators and cards. */
+.glow-pulse {
+  animation: glow-breathe 3s ease-in-out infinite;
+}
+
+/* Spotlight effect on hover — a radial gradient behind the card. */
+.spotlight-hover {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight-hover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    color-mix(in srgb, var(--color-brand-500) 12%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+.spotlight-hover:hover::after {
+  opacity: 1;
+}
+
+/* Floating product image glow. */
+.product-glow {
+  position: relative;
+}
+.product-glow::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-brand-500) 30%, transparent),
+    color-mix(in srgb, var(--color-violet-500) 15%, transparent) 50%,
+    transparent 75%
+  );
+  animation: product-glow-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Section divider with animated gradient. */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-brand-500) 20%,
+    var(--color-violet-400) 50%,
+    var(--color-brand-500) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: divider-travel 8s ease-in-out infinite;
+  opacity: 0.5;
 }
 
 /* ------------------------------------------------------------ background --- */
@@ -308,18 +420,311 @@ body {
   animation: scroll-hint 2s ease-in-out infinite;
 }
 
+
+/* ------------------------------------------------------ control room --- */
+
+/*
+ * The dashboard is the one view people leave open on a projector, so every
+ * addition here is transform/opacity or a colour transition. Nothing new
+ * animates a backdrop-filter, and nothing new blurs.
+ */
+
+/* Panels warm slightly under the pointer, so a dense grid still feels alive. */
+.panel {
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+.panel:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/*
+ * A coloured hairline along a panel's top edge, keyed to what the panel is
+ * about. Cheap identity: four panels that would otherwise be identical
+ * rectangles become four recognisable places.
+ */
+.panel-accent {
+  position: relative;
+}
+.panel-accent::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Rows in the dense lists. */
+.row-hover {
+  transition: background-color 160ms ease;
+}
+.row-hover:hover {
+  background: rgba(255, 255, 255, 0.028);
+}
+
+/*
+ * Expand/collapse without a hard-coded height: 0fr -> 1fr on a single grid row.
+ * Only ever one or two rows are mid-transition, so the per-frame layout is
+ * confined to the list that owns them.
+ */
+.expandable {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expandable[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.expandable > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------- metrics --- */
+
+/*
+ * The audit trail is a hash chain, so the feed draws one: a rail down the left
+ * with a node per row. While the stream is live the rail carries a travelling
+ * highlight, which is the only thing on this screen that moves on its own.
+ */
+@keyframes chain-flow {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -240px;
+  }
+}
+.chain-flow {
+  background-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-brand-500) 14%,
+    var(--color-violet-400) 34%,
+    transparent 55%,
+    transparent 100%
+  );
+  background-size: 100% 240px;
+  animation: chain-flow 3.4s linear infinite;
+}
+
+/* A light travelling across a bar while work is in flight. */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* A ring expanding out of a live indicator. */
+@keyframes ping-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.animate-ping-ring {
+  animation: ping-ring 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* A metric nudges upward when its value changes, so a change is noticed. */
+@keyframes value-bump {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.animate-value-bump {
+  animation: value-bump 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Sparkline and ring strokes draw themselves in on first paint. */
+@keyframes draw-in {
+  from {
+    stroke-dashoffset: var(--draw-length, 400);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.animate-draw-in {
+  animation: draw-in 1.1s ease-out forwards;
+}
+
+/* Progress and budget bars ease to their new width rather than snapping; the
+   radial dials ease the same way, on the same curve. */
+.bar-fill {
+  transition: width 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ring-progress {
+  transition: stroke-dashoffset 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Transcript steps arrive one after another as the agent's plan is read out. */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-step-in {
+  opacity: 0;
+  animation: step-in 380ms ease-out forwards;
+}
+
+/* The three dots under a working agent. */
+@keyframes thinking {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.animate-thinking > * {
+  animation: thinking 1.3s ease-in-out infinite;
+}
+.animate-thinking > *:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.animate-thinking > *:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+/* Interactive tiles and buttons get a small, consistent lift. */
+.lift {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+.lift:hover {
+  transform: translateY(-1px);
+}
+.lift:active {
+  transform: translateY(0);
+}
+
 /*
  * Reduced motion: kill the ambient loops and let the scroll-driven timelines
  * render at their end state. The landing page checks this in JS too, so the
  * story is still fully readable without a single frame of animation.
  */
+
+/* -------------------------------------------------------- new keyframes --- */
+
+@keyframes gradient-shimmer {
+  0% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes spin-border {
+  to { --border-angle: 360deg; }
+}
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 15px -5px color-mix(in srgb, var(--color-brand-500) 40%, transparent); }
+  50% { box-shadow: 0 0 30px -3px color-mix(in srgb, var(--color-brand-500) 60%, transparent); }
+}
+
+@keyframes product-glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes divider-travel {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes float-up {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
+  50% { transform: translateY(-20px) scale(1.1); opacity: 0.7; }
+}
+
+@keyframes float-card {
+  0%, 100% { transform: translateY(0) rotateX(0deg); }
+  50% { transform: translateY(-8px) rotateX(2deg); }
+}
+
+.animate-float-card {
+  animation: float-card 6s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   .animate-arrive,
   .animate-pulse-dot,
   .animate-sheen,
   .animate-scroll-hint,
+  .animate-shimmer,
+  .animate-ping-ring,
+  .animate-value-bump,
+  .animate-draw-in,
+  .animate-step-in,
+  .animate-thinking > *,
+  .animate-float-card,
+  .chain-flow,
   .aurora::before,
-  .aurora::after {
+  .aurora::after,
+  .text-gradient-shimmer,
+  .gradient-border::before,
+  .glow-pulse,
+  .product-glow::before,
+  .section-divider {
     animation: none !important;
+  }
+
+  /* The step and draw animations start from a hidden state, so their end state
+     has to be restored explicitly rather than merely un-animated. */
+  .animate-step-in,
+  .animate-draw-in {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+
+  .expandable,
+  .bar-fill,
+  .ring-progress,
+  .lift,
+  .panel,
+  .row-hover {
+    transition: none !important;
+  }
+  .lift:hover {
+    transform: none;
   }
 }

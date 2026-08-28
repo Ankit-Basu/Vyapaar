@@ -2,9 +2,10 @@
 
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { ThemeSwitcher } from "@/components/glass/theme";
 import { EASE, gsap, useScene } from "@/components/landing/motion";
 
 const LINKS = [
@@ -18,12 +19,40 @@ export function Nav() {
   const scope = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLElement>(null);
   const progress = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<string | null>(null);
+
+  /*
+   * Which section the reader is actually in.
+   *
+   * An observer rather than a ScrollTrigger: knowing where you are is
+   * orientation, not decoration, so it has to keep working for a visitor who
+   * has asked for reduced motion — and `useScene` deliberately never builds
+   * triggers for them.
+   */
+  useEffect(() => {
+    const sections = LINKS.map((link) =>
+      document.querySelector<HTMLElement>(link.href),
+    ).filter((el): el is HTMLElement => el !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(`#${entry.target.id}`);
+        }
+      },
+      // A thin band across the middle of the viewport: whatever crosses it wins,
+      // so exactly one link is lit at a time.
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   useScene(scope, {
     motion: () => {
-      // The bar is invisible over the hero and slides in once the hero is behind us.
-      gsap.set(bar.current, { yPercent: -110, opacity: 0 });
-      ScrollTriggerShow(bar.current!);
+      // The bar enters smoothly on mount and stays accessible
+      gsap.from(bar.current, { yPercent: -100, opacity: 0, duration: 0.6, ease: EASE });
 
       // A hairline that tracks how far through the page the reader is.
       gsap.to(progress.current, {
@@ -42,12 +71,12 @@ export function Nav() {
     <div ref={scope}>
       <header
         ref={bar}
-        className="glass fixed inset-x-0 top-0 z-50 border-x-0 border-t-0 will-change-transform"
+        className="fixed inset-x-0 top-0 z-50 px-3 pt-3 will-change-transform sm:px-6 sm:pt-4"
       >
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-5 sm:px-8">
+        <div className="glass-surface glass-d3 glass-specular-edge relative mx-auto flex h-14 max-w-7xl items-center gap-5 rounded-2xl px-4 sm:px-5">
           <Link href="#top" className="flex items-center gap-2.5" onClick={smoothTo("#top")}>
             <Mark />
-            <span className="text-[13.5px] font-semibold tracking-tight">AgentMandi</span>
+            <span className="u-display text-[15px] tracking-tight">AgentMandi</span>
           </Link>
 
           <nav className="ml-2 hidden items-center gap-1 md:flex">
@@ -56,26 +85,46 @@ export function Nav() {
                 key={link.href}
                 href={link.href}
                 onClick={smoothTo(link.href)}
-                className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-mute-400 transition-colors hover:bg-white/5 hover:text-mute-100"
+                aria-current={active === link.href ? "true" : undefined}
+                className={cn(
+                  "u-focus-ring relative rounded-lg px-2.5 py-1.5 text-[12.5px] transition-colors",
+                  active === link.href
+                    ? "text-heading"
+                    : "text-caption hover:bg-white/[0.05] hover:text-body",
+                )}
               >
                 {link.label}
+                {/* The active section gets a lit underline rather than a filled
+                    pill, so the bar stays quiet while still answering "where am I". */}
+                {active === link.href && (
+                  <span
+                    className="absolute inset-x-2 -bottom-px h-px rounded-full"
+                    style={{
+                      background: "var(--color-accent)",
+                      boxShadow: "0 0 8px 0 var(--color-accent)",
+                    }}
+                    aria-hidden
+                  />
+                )}
               </a>
             ))}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <ThemeSwitcher />
             <a
               href="https://github.com/Ankit-Basu/AgentMandi"
               target="_blank"
               rel="noreferrer"
-              className="grid size-8 place-items-center rounded-lg text-mute-400 transition-colors hover:bg-white/5 hover:text-mute-100"
+              className="u-focus-ring grid size-9 place-items-center rounded-xl text-caption transition-colors hover:bg-white/[0.06] hover:text-heading"
               aria-label="Source on GitHub"
             >
               <GithubMark className="size-[15px]" />
             </a>
             <Link
               href="/dashboard"
-              className="group inline-flex h-8 items-center gap-1 rounded-lg bg-mute-100 px-3 text-[12.5px] font-semibold text-ink-950 transition-transform hover:scale-[1.03]"
+              className="u-focus-ring skeu skeu-gloss group inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[12.5px] font-semibold text-canvas"
+              style={{ background: "var(--color-accent)" }}
             >
               Open the dashboard
               <ArrowUpRight
@@ -84,31 +133,23 @@ export function Nav() {
               />
             </Link>
           </div>
-        </div>
 
-        <div
-          ref={progress}
-          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-gradient-to-r from-brand-500 via-brand-400 to-violet-400"
-        />
+          {/* How far through the page the reader is, hugging the pill's own
+              edge rather than spanning the padded wrapper around it. */}
+          <div
+            ref={progress}
+            className="absolute inset-x-5 bottom-0.5 h-px origin-left scale-x-0 rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, var(--color-accent), var(--color-accent-text))",
+            }}
+          />
+        </div>
       </header>
     </div>
   );
 }
 
-/** Slide the bar in once the hero has scrolled past. */
-function ScrollTriggerShow(target: HTMLElement) {
-  gsap.to(target, {
-    yPercent: 0,
-    opacity: 1,
-    duration: 0.45,
-    ease: EASE,
-    scrollTrigger: {
-      trigger: document.documentElement,
-      start: "top+=88vh top",
-      toggleActions: "play none none reverse",
-    },
-  });
-}
 
 /**
  * Anchor scrolling in JS rather than CSS `scroll-behavior`, which would fight
@@ -129,9 +170,13 @@ export function Mark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-violet-500 text-[13px] font-bold text-white shadow-lg shadow-brand-500/25",
+        "skeu grid size-7 shrink-0 place-items-center rounded-lg text-[13px] font-bold text-canvas",
         className,
       )}
+      style={{
+        background:
+          "linear-gradient(140deg, var(--color-accent-text), var(--color-accent))",
+      }}
     >
       ₹
     </span>

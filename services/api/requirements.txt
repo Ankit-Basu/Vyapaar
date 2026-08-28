@@ -9,7 +9,11 @@ python-dotenv==1.0.1
 PyJWT==2.10.1
 
 # --- payments (Razorpay test mode) ---
-razorpay==1.4.2
+# 2.x resolves its own version through importlib.metadata; 1.4.2 imported
+# pkg_resources unconditionally, which Python 3.12+ no longer ships in a
+# fresh venv -- so the live gateway crashed on import the moment real keys
+# were configured.
+razorpay==2.0.1
 httpx==0.28.1
 
 # --- vector math for catalog semantic search ---

@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     llm_model: str = Field(default="", alias="LLM_MODEL")
     llm_timeout_seconds: float = Field(default=30.0, alias="LLM_TIMEOUT_SECONDS")
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    # Accepts one key or a comma-separated pool. See `groq_api_keys`.
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
 
@@ -84,6 +85,17 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def groq_api_keys(self) -> list[str]:
+        """Groq keys as a pool.
+
+        A single key is just a pool of one, so `GROQ_API_KEY=abc` keeps working.
+        Several comma-separated keys let the client rotate away from whichever
+        one is rate-limited -- Groq's free tier is generous per key but easy to
+        exhaust during a demo that runs seven scenarios back to back.
+        """
+        return [key.strip() for key in self.groq_api_key.split(",") if key.strip()]
 
     @property
     def razorpay_configured(self) -> bool:
@@ -109,7 +121,7 @@ class Settings(BaseSettings):
             return self.llm_provider
         if self.gemini_api_key:
             return "gemini"
-        if self.groq_api_key:
+        if self.groq_api_keys:
             return "groq"
         return "offline"
 
@@ -119,7 +131,9 @@ class Settings(BaseSettings):
             return self.llm_model
         return {
             "gemini": "gemini-2.0-flash",
-            "groq": "llama-3.3-70b-versatile",
+            # Groq retired llama-3.3-70b-versatile; this is the strongest
+            # chat model the free tier currently serves.
+            "groq": "openai/gpt-oss-120b",
             "ollama": "llama3.2",
             "offline": "deterministic-planner",
         }[self.effective_llm_provider]

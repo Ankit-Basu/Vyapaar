@@ -1,3 +1,4 @@
+import { MoltenBackground } from "@/components/glass/molten-background";
 import { AuditScene } from "@/components/landing/audit-scene";
 import { GuardrailScene } from "@/components/landing/guardrail-scene";
 import { Hero } from "@/components/landing/hero";
@@ -24,12 +25,11 @@ import {
 export default function Landing() {
   return (
     <>
-      <div className="aurora" aria-hidden />
-      <div className="grain" aria-hidden />
+      <MoltenBackground />
 
       <Nav />
 
-      <main className="relative">
+      <main className="relative z-10">
         <Hero />
         <StatStrip />
         <Problem />

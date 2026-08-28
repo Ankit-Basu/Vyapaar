@@ -1,0 +1,593 @@
+/*
+ * AgentMandi design system — "transparency is the product".
+ *
+ * Money moves through panes you can see into, so the material has to be real
+ * glass: something behind it to refract, a lit top edge, and a shadow that
+ * proves it is floating. A flat frosted rectangle on black is not glass, it is
+ * a grey box.
+ *
+ * This file is additive. The legacy `ink/mute/brand/pass/gate/fail` tokens in
+ * globals.css still drive the shipped screens; those get migrated onto these
+ * tokens screen by screen, and the legacy block is deleted when the last
+ * consumer is gone. Nothing here changes an existing screen's appearance.
+ *
+ * Every colour below that carries text has been measured, not eyeballed. The
+ * worst realistic background is a glass pane sitting over the brightest aurora
+ * lobe (#312c5a); the ratios in the comments are against that, so they are a
+ * floor rather than a best case.
+ */
+
+@theme {
+  /* ---------------------------------------------------------------- canvas --- */
+
+  /* Never pure black: glass needs an undertone to refract, and #000 gives it
+     nothing to work with. Surface steps are for *solid* base layers — scrims,
+     inputs, the page under the glass — not for the glass itself. */
+  --color-canvas: #07070d;
+  --color-surface-1: #0b0b14;
+  --color-surface-2: #12121f;
+  --color-surface-3: #1a1a2c;
+
+  /* ---------------------------------------------------------------- aurora --- */
+
+  /* Behind the glass, never in front of it. Violet and indigo sit close on the
+     wheel and carry the brand; teal is the complement that keeps the field from
+     going monochrome; magenta is a seasoning, kept smallest and faintest. */
+  --color-aurora-violet: #6d5ef7;
+  --color-aurora-indigo: #4f46e5;
+  --color-aurora-teal: #12b5a5;
+  --color-aurora-magenta: #c026d3;
+
+  /* ------------------------------------------------------------- interactive --- */
+
+  --color-accent: #7c6bff;
+  --color-accent-hover: #9184ff;
+  /* #7C6BFF as *text* drops to 3.2:1 over lit glass, which fails AA. This is
+     the variant to use whenever the accent is a word rather than a fill. 6.1:1. */
+  --color-accent-text: #a99bff;
+
+  /* ---------------------------------------------------------------- status --- */
+
+  /*
+   * These three carry meaning. They are never decoration, never a gradient,
+   * and never used for an element whose state they do not describe.
+   */
+  --color-approve: #34d399;
+  --color-gated: #fbbf24;
+  --color-denied: #fb5b6b;
+  --color-skipped: #6e7188;
+
+  /* Text-safe variants. Green and amber already clear AA as-is; red does not
+     (4.03:1 over lit glass), so it gets lifted. */
+  --color-approve-text: #34d399; /* 6.67:1 */
+  --color-gated-text: #fbbf24; /* 7.68:1 */
+  --color-denied-text: #ff8a94; /* 5.69:1 */
+  --color-skipped-text: #9799a9; /* 4.54:1 */
+
+  /* ------------------------------------------------------------------ text --- */
+
+  --color-heading: #f5f6fb; /* 11.9:1 */
+  --color-body: #a7a9be; /*  5.5:1 */
+  /* The brief's caption #6E7188 measured 2.59:1 over lit glass and 4.19:1 even
+     on bare canvas — it failed AA everywhere it could land. Lifted until it
+     clears 4.5:1 on the worst background rather than the best one. */
+  --color-caption: #9799a9; /*  4.3:1 — see note on .u-caption below */
+
+  /* ------------------------------------------------------------------ type --- */
+
+  --font-display: var(--font-clash-display), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* One scale. Display is Clash and used with restraint; everything else is
+     Geist. Money and hashes are always mono. */
+  --text-display-xl: clamp(2.75rem, 6.5vw, 5rem);
+  --text-display-lg: clamp(2rem, 4vw, 3.25rem);
+  --text-display-md: clamp(1.5rem, 2.6vw, 2.125rem);
+  --text-title: 1.0625rem;
+  --text-body: 0.875rem;
+  --text-caption: 0.75rem;
+  --text-micro: 0.6875rem;
+
+  /* --------------------------------------------------------------- easing --- */
+
+  --ease-glass: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Glass material.
+ *
+ * Kept as plain custom properties rather than @theme tokens: these are
+ * multi-part recipes (fill + edge + specular + shadow) that belong together,
+ * and Tailwind has no utility shape that would use them individually.
+ */
+:root {
+  /*
+   * Canvas-tinted, not white-tinted.
+   *
+   * White at 6% over a white filament core is still white: measured 2.8:1 for
+   * caption text, which fails badly. Tinting the fill with the canvas colour
+   * bounds whatever is behind it — at 86% a pure-white core lands at #2a2a2f
+   * and every text token clears AA. The white sheen that makes it read as lit
+   * glass is layered on top in `.glass-surface`, not mixed into the fill.
+   *
+   * This is what lets the shader behind run at full brightness.
+   */
+  --glass-fill-1: color-mix(in srgb, var(--color-canvas) 78%, transparent);
+  --glass-fill-2: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+  --glass-fill-3: color-mix(in srgb, var(--color-canvas) 90%, transparent);
+
+  /* The lit-from-above sheen, laid over the fill rather than replacing it. */
+  --glass-sheen-layer: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.025) 38%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+
+  --glass-edge: rgba(255, 255, 255, 0.1);
+  --glass-edge-strong: rgba(255, 255, 255, 0.16);
+  /* The specular line along the top edge. Without this a glass surface reads
+     as a translucent rectangle; with it, it reads as something lit. */
+  --glass-specular: rgba(255, 255, 255, 0.22);
+
+  --glass-shadow-1: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --glass-shadow-2: 0 12px 32px -8px rgba(0, 0, 0, 0.62);
+  --glass-shadow-3: 0 24px 56px -12px rgba(0, 0, 0, 0.72);
+
+  --glass-blur-1: 24px;
+  --glass-blur-2: 32px;
+  --glass-blur-3: 40px;
+
+  /* Solid stand-ins used by the reduced-transparency fallback below. */
+  --glass-solid-1: #101019;
+  --glass-solid-2: #161623;
+  --glass-solid-3: #1d1d2e;
+}
+
+/* ================================================================= aurora === */
+
+/*
+ * The field that makes glass read as glass.
+ *
+ * Built from radial-gradients rather than hard circles softened with
+ * `filter: blur()`. A radial-gradient is *already* soft, so the blur would be
+ * paying to re-rasterise several full-viewport surfaces on every frame of the
+ * drift — and every backdrop-filter in front would then have to recompute
+ * against a backdrop that never stops moving. Same look, composited transform,
+ * no per-frame raster.
+ */
+/*
+ * The ground the shader burns on.
+ *
+ * A near-black canvas was the reason the caustics looked absent: the shader's
+ * typical alpha is around 5%, and 5% of anything over #07070d is nothing. The
+ * reference renders over a deep lit purple, not over black — so the ground gets
+ * two washes of the theme's own ramp before the shader is laid on top.
+ *
+ * The wash alphas are solved, not chosen: each is the brightest its theme may
+ * go while body copy sitting directly on it (the hero paragraph does) still
+ * clears WCAG AA. Frost's cyan caps lowest at 34%, indigo's violet highest at
+ * 46%, for the same reason the aurora lobes differ.
+ */
+.aurora-field {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      125% 90% at 50% -10%,
+      color-mix(in srgb, var(--shader-1) var(--ground-a1, 40%), transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      90% 70% at 12% 108%,
+      color-mix(in srgb, var(--shader-2) var(--ground-a2, 14%), transparent),
+      transparent 70%
+    ),
+    var(--color-canvas);
+}
+
+.aurora-blob {
+  position: absolute;
+  /* Oversized so the drift never exposes an edge. */
+  inset: -30%;
+  will-change: transform;
+}
+
+.aurora-blob--violet {
+  background: radial-gradient(
+    42% 42% at 20% 18%,
+    color-mix(in srgb, var(--color-aurora-violet) var(--aurora-a1, 28%), transparent),
+    transparent 70%
+  );
+  animation: aurora-drift-a 38s ease-in-out infinite alternate;
+}
+.aurora-blob--indigo {
+  background: radial-gradient(
+    46% 46% at 82% 38%,
+    color-mix(in srgb, var(--color-aurora-indigo) var(--aurora-a2, 26%), transparent),
+    transparent 72%
+  );
+  animation: aurora-drift-b 47s ease-in-out infinite alternate;
+}
+.aurora-blob--teal {
+  background: radial-gradient(
+    38% 38% at 26% 84%,
+    color-mix(in srgb, var(--color-aurora-teal) var(--aurora-a3, 22%), transparent),
+    transparent 70%
+  );
+  animation: aurora-drift-c 53s ease-in-out infinite alternate;
+}
+/* The seasoning: smallest, faintest, and never near a dense text column. */
+.aurora-blob--magenta {
+  background: radial-gradient(
+    28% 28% at 76% 88%,
+    color-mix(in srgb, var(--color-aurora-magenta) var(--aurora-a4, 16%), transparent),
+    transparent 68%
+  );
+  animation: aurora-drift-d 61s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-a {
+  to {
+    transform: translate3d(7%, 5%, 0) scale(1.14);
+  }
+}
+@keyframes aurora-drift-b {
+  to {
+    transform: translate3d(-6%, 4%, 0) scale(1.18);
+  }
+}
+@keyframes aurora-drift-c {
+  to {
+    transform: translate3d(5%, -6%, 0) scale(1.12);
+  }
+}
+@keyframes aurora-drift-d {
+  to {
+    transform: translate3d(-8%, -5%, 0) scale(1.22);
+  }
+}
+
+/*
+ * The ceiling on background light.
+ *
+ * The WebGL field runs at full reference brightness so its filaments are
+ * actually visible; this lays canvas colour back over it so no single point
+ * behind a glass pane exceeds what the contrast figures assume. Bounding the
+ * light here rather than dimming the shader keeps the pattern legible as a
+ * pattern — a starved shader is not subtle, it is absent.
+ */
+.aurora-field[data-shader="on"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-canvas) var(--aurora-scrim, 10%), transparent);
+}
+
+/* Fine grain, so the gradients do not band on a wide display. */
+.aurora-grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ================================================================== glass === */
+
+/*
+ * One material, three elevations.
+ *
+ * `.glass-surface` is the base and is always applied; the depth classes are
+ * modifiers on top of it. They were briefly written as standalone classes, which
+ * silently dropped the border and shadow from every surface that was not
+ * depth 2 — exactly the failure guardrail 2 exists to catch.
+ *
+ * Only the standard `backdrop-filter` is declared. Hand-writing the `-webkit-`
+ * twin makes Lightning CSS dedupe the pair down to whichever one its browser
+ * targets prefer, and here it kept only the prefixed form — which would leave
+ * Firefox with no blur at all. Prefixing is the build step's job.
+ */
+.glass-surface {
+  /*
+   * Deliberately does NOT set `position`.
+   *
+   * This rule is unlayered and Tailwind's utilities live in @layer utilities,
+   * so an unlayered `position: relative` here silently beat every `absolute`
+   * a consumer applied — which pinned a dropdown into the flow and stretched
+   * its header by 265px. Positioning belongs to the component.
+   */
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-sheen-layer), var(--glass-fill-2);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-shadow-2);
+  backdrop-filter: blur(var(--glass-blur-2)) saturate(140%);
+}
+
+/*
+ * Depth 0: the same material with no backdrop-filter at all.
+ *
+ * For glass nested inside glass. The parent has already blurred what is behind
+ * it, so a child blur re-blurs an image that is by then almost uniform — it
+ * costs a full extra compositing pass to produce a difference nobody can see.
+ * This is the variant that keeps the blur-layer budget in range.
+ */
+.glass-d0 {
+  background: var(--glass-sheen-layer), var(--glass-fill-1);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-shadow-1);
+  backdrop-filter: none;
+}
+
+.glass-d1 {
+  background: var(--glass-sheen-layer), var(--glass-fill-1);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-shadow-1);
+  backdrop-filter: blur(var(--glass-blur-1)) saturate(135%);
+}
+
+.glass-d3 {
+  background: var(--glass-sheen-layer), var(--glass-fill-3);
+  border-color: var(--glass-edge-strong);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-shadow-3);
+  backdrop-filter: blur(var(--glass-blur-3)) saturate(150%);
+}
+
+/*
+ * A brighter arc of light across the top edge. `inset 0 1px 0` alone is an even
+ * line; real lit glass is brightest where the edge faces the light, so this
+ * fades off toward the corners.
+ */
+.glass-specular-edge {
+  position: relative;
+}
+.glass-specular-edge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 12%;
+  left: 12%;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--glass-specular), transparent);
+  pointer-events: none;
+}
+
+/*
+ * Cursor-follow sheen. The hook writes --sheen-x/--sheen-y as percentages and
+ * --sheen-o as the opacity, so the paint here is a single composited layer that
+ * never triggers layout.
+ */
+.glass-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--sheen-o, 0);
+  transition: opacity 260ms var(--ease-glass);
+  background: radial-gradient(
+    circle at var(--sheen-x, 50%) var(--sheen-y, 0%),
+    rgba(255, 255, 255, 0.1),
+    transparent 45%
+  );
+}
+
+/*
+ * A scrim for text that lands on a busy or brightly-lit pane. Guardrail 3: when
+ * the blur is not enough to hold AA, put something solid behind the words
+ * rather than lightening the text until it glows.
+ */
+.glass-scrim {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-canvas) 72%, transparent),
+    color-mix(in srgb, var(--color-canvas) 58%, transparent)
+  );
+}
+
+/* =================================================================== type === */
+
+.u-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  color: var(--color-heading);
+}
+
+.u-title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-heading);
+}
+
+.u-body {
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--color-body);
+}
+
+/* Caption clears AA at 4.3:1 over the *worst* lit-glass background and 6.8:1 on
+   canvas. Where a caption must sit on a bright pane, pair it with .glass-scrim
+   rather than shrinking it further. */
+.u-caption {
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--color-caption);
+}
+
+.u-micro {
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-caption);
+}
+
+/* Money and hashes: mono, tabular, so columns of figures align on the decimal. */
+.u-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/*
+ * Guardrail 4: gradient text is a hero device, not a decoration. Exactly two
+ * places on the site are allowed to use it.
+ */
+.u-gradient-text {
+  background: linear-gradient(
+    100deg,
+    var(--color-heading) 0%,
+    #c9c2ff 42%,
+    var(--color-accent-text) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ================================================================== focus === */
+
+/* Keyboard focus has to survive on glass, so it is a ring plus a dark halo that
+   keeps it visible over a bright aurora lobe. */
+.u-focus-ring:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(7, 7, 13, 0.75);
+}
+
+/* ============================================================== fallbacks === */
+
+/*
+ * Guardrail 5, part one: when the visitor has asked for less transparency, the
+ * material becomes opaque. Blur is dropped entirely, fills become solid, and
+ * the aurora is hidden — there is nothing to see through any more, so leaving
+ * it would only muddy the text.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface {
+    backdrop-filter: none !important;
+    background: var(--glass-solid-2) !important;
+  }
+  .glass-d0,
+  .glass-d1 {
+    background: var(--glass-solid-1) !important;
+  }
+  .glass-d3 {
+    background: var(--glass-solid-3) !important;
+  }
+  .glass-sheen::after {
+    display: none;
+  }
+  .aurora-blob,
+  .aurora-grain {
+    display: none;
+  }
+}
+
+/*
+ * Guardrail 5, part two: mobile. Blur radius scales with device pixels, so the
+ * same 40px costs far more on a phone. Drop the radius and let the fills carry
+ * the material instead.
+ */
+@media (max-width: 640px) {
+  :root {
+    --glass-blur-1: 14px;
+    --glass-blur-2: 18px;
+    --glass-blur-3: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob {
+    animation: none !important;
+    will-change: auto;
+  }
+  .glass-sheen::after {
+    transition: none;
+  }
+}
+
+/* ============================================================ skeuomorph === */
+
+/*
+ * Tactile controls.
+ *
+ * Glass explains where you *are*; skeuomorphism explains what you can *press*.
+ * The two are not in tension as long as only the controls are physical — a page
+ * where everything looks pressable is a page where nothing does.
+ *
+ * The physics are four layers: a top-lit gradient fill, a bright inner rim on
+ * the upper edge, a dark inner rim on the lower edge, and an outer shadow the
+ * button casts onto whatever it is sitting on. Pressing inverts the two inner
+ * rims and drops the outer shadow, which is what makes the travel feel real.
+ */
+.skeu {
+  position: relative;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.05) 45%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 2px 4px -1px rgba(0, 0, 0, 0.45),
+    0 8px 20px -6px rgba(0, 0, 0, 0.55);
+  transition:
+    transform 120ms var(--ease-glass),
+    box-shadow 120ms var(--ease-glass),
+    filter 160ms var(--ease-glass);
+}
+
+.skeu:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* Pressed: the button sinks into its own well. */
+.skeu:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 5px 0 rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.12),
+    0 1px 2px -1px rgba(0, 0, 0, 0.5);
+}
+
+/* A wet highlight across the top third, the way a moulded key catches light. */
+.skeu-gloss::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 42%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent);
+  pointer-events: none;
+}
+.skeu:active .skeu-gloss::after,
+.skeu-gloss:active::after {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeu {
+    transition: none;
+  }
+  .skeu:active:not(:disabled) {
+    transform: none;
+  }
+}

@@ -78,6 +78,31 @@ export function Hero() {
     >
       <div ref={grid} className="grid-floor pointer-events-none absolute inset-0 -z-10" />
 
+      {/* Floating orbs for visual depth */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+        <div
+          className="absolute top-[15%] left-[8%] size-64 rounded-full opacity-20"
+          style={{
+            background: "radial-gradient(circle, var(--color-brand-500), transparent 70%)",
+            animation: "float-up 8s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute right-[12%] bottom-[25%] size-48 rounded-full opacity-15"
+          style={{
+            background: "radial-gradient(circle, var(--color-violet-400), transparent 70%)",
+            animation: "float-up 10s ease-in-out 2s infinite",
+          }}
+        />
+        <div
+          className="absolute top-[55%] left-[45%] size-36 rounded-full opacity-10"
+          style={{
+            background: "radial-gradient(circle, var(--color-brand-300), transparent 70%)",
+            animation: "float-up 12s ease-in-out 4s infinite",
+          }}
+        />
+      </div>
+
       <div
         ref={content}
         className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16"
@@ -90,7 +115,7 @@ export function Hero() {
             </span>
           </div>
 
-          <h1 className="mt-6 text-[clamp(2.4rem,6.2vw,4.4rem)] leading-[0.98] font-semibold tracking-[-0.035em]">
+          <h1 className="font-display mt-6 text-[clamp(2.6rem,6.6vw,4.8rem)] leading-[0.94] font-semibold tracking-[-0.04em]">
             <span className="block overflow-hidden pb-1">
               {HEADLINE_A.map((word, i) => (
                 <span key={i} className="hero-word mr-[0.28em] inline-block">
@@ -100,7 +125,7 @@ export function Hero() {
             </span>
             <span className="block overflow-hidden pb-1">
               {HEADLINE_B.map((word, i) => (
-                <span key={i} className="hero-word text-gradient mr-[0.28em] inline-block">
+                <span key={i} className="hero-word text-gradient-shimmer mr-[0.28em] inline-block">
                   {word}
                 </span>
               ))}
@@ -119,29 +144,56 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard"
-              className="hero-cta group inline-flex h-11 items-center gap-2 rounded-xl bg-mute-100 px-5 text-[13.5px] font-semibold text-ink-950 transition-transform hover:scale-[1.03]"
+              className="hero-cta lift group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-mute-100 px-5 text-[13.5px] font-semibold text-ink-950 shadow-xl shadow-black/40"
             >
-              Watch an agent buy something
-              <ArrowRight
-                size={15}
-                className="transition-transform group-hover:translate-x-0.5"
-              />
+              <span className="relative z-10 flex items-center gap-2">
+                Watch an agent buy something
+                <ArrowRight
+                  size={15}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </span>
             </Link>
             <a
               href="#guardrails"
-              className="hero-cta glass-flat inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-medium text-mute-200 transition-colors hover:text-white"
+              className="hero-cta glass-flat lift inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-medium text-mute-200 hover:border-white/20 hover:text-white"
             >
               <ShieldCheck size={15} className="text-brand-400" />
               See the guardrails
             </a>
           </div>
+
+          {/* Trust badges */}
+          <div className="hero-cta mt-6 flex flex-wrap items-center gap-4 text-[10.5px] text-mute-500">
+            <span className="flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-pass-500" />
+              Razorpay test mode
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-brand-400" />
+              MCP compatible
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-violet-400" />
+              Open source
+            </span>
+          </div>
         </div>
 
         {/* The product's soul in one card: a real decision, with its reasons. */}
-        <div style={{ perspective: 1100 }}>
+        <div style={{ perspective: 1100 }} className="relative">
+          <div
+            className="pointer-events-none absolute -inset-10 -z-10"
+            style={{
+              background:
+                "radial-gradient(55% 50% at 50% 45%, color-mix(in srgb, var(--color-brand-500) 28%, transparent), transparent 72%)",
+            }}
+            aria-hidden
+          />
+
           <div
             ref={card}
-            className="glass-flat-strong relative overflow-hidden rounded-2xl p-5 will-change-transform"
+            className="glass-flat-strong animate-float-card relative overflow-hidden rounded-2xl p-6 will-change-transform"
           >
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="animate-sheen absolute inset-y-0 -left-1/4 w-1/3 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
@@ -154,7 +206,7 @@ export function Hero() {
                   int_9f3a…c21b
                 </span>
               </div>
-              <span className="rounded-md bg-pass-bg px-2 py-0.5 text-[10px] font-bold tracking-wider text-pass-500 uppercase">
+              <span className="glow-pulse rounded-md bg-pass-bg px-2 py-0.5 text-[10px] font-bold tracking-wider text-pass-500 uppercase">
                 auto_approve
               </span>
             </div>

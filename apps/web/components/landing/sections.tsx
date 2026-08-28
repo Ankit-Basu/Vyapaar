@@ -4,29 +4,31 @@ import {
   ArrowRight,
   Ban,
   CalendarClock,
+  CheckCheck,
   CircleSlash,
-  Layers,
+  IndianRupee,
+  Plug,
   RefreshCw,
   ShieldCheck,
-  Store,
   Tag,
   Terminal,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 import { EASE, Eyebrow, Reveal, Section, gsap, useScene } from "@/components/landing/motion";
+import { Bento } from "@/components/landing/bento";
 import { GithubMark, Mark } from "@/components/landing/nav";
 
 /* ------------------------------------------------------------------ stats --- */
 
 const STATS = [
-  { value: "8", label: "guardrails per purchase" },
-  { value: "103", label: "tests passing" },
-  { value: "7", label: "MCP tools exposed" },
-  { value: "0", label: "rupees of real money" },
+  { value: "8", label: "guardrails per purchase", icon: ShieldCheck, accent: "var(--color-brand-500)" },
+  { value: "103", label: "tests passing", icon: CheckCheck, accent: "var(--color-pass-500)" },
+  { value: "7", label: "MCP tools exposed", icon: Plug, accent: "var(--color-violet-400)" },
+  { value: "0", label: "rupees of real money", icon: IndianRupee, accent: "var(--color-gate-500)" },
 ];
 
 export function StatStrip() {
@@ -61,11 +63,23 @@ export function StatStrip() {
 
   return (
     <section ref={scope} className="relative mx-auto max-w-7xl px-6 sm:px-8">
-      <div className="glass-flat grid grid-cols-2 gap-px overflow-hidden rounded-2xl md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {STATS.map((stat) => (
-          <div key={stat.label} className="stat-item px-5 py-6 text-center">
+          <div
+            key={stat.label}
+            className="stat-item glass-flat lift panel-accent spotlight-hover rounded-2xl px-5 py-6 text-center hover:border-white/20"
+            style={{ "--accent": stat.accent } as CSSProperties}
+          >
             <div
-              className="stat-value font-mono text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tabular-nums text-gradient"
+              className="mx-auto grid size-8 place-items-center rounded-lg"
+              style={{
+                background: `color-mix(in srgb, ${stat.accent} 14%, transparent)`,
+              }}
+            >
+              <stat.icon size={14} style={{ color: stat.accent }} />
+            </div>
+            <div
+              className="stat-value text-gradient mt-2.5 font-mono text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tabular-nums"
               data-value={stat.value}
             >
               {stat.value}
@@ -74,6 +88,9 @@ export function StatStrip() {
           </div>
         ))}
       </div>
+
+      {/* Section divider */}
+      <div className="section-divider mx-auto mt-16 max-w-2xl" />
     </section>
   );
 }
@@ -87,7 +104,7 @@ export function Problem() {
         <Eyebrow index="01">The gap</Eyebrow>
       </Reveal>
       <Reveal stagger>
-        <h2 className="mt-5 max-w-3xl text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+        <h2 className="font-display mt-5 max-w-3xl text-[clamp(2rem,3.8vw,3.1rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
           Conversational checkout already exists.
           <span className="block text-mute-500">It just lives inside the merchant&rsquo;s app.</span>
         </h2>
@@ -104,31 +121,18 @@ export function Problem() {
         </p>
       </Reveal>
 
-      <Reveal stagger className="mt-12 grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            icon: Store,
-            title: "Discoverable",
-            body: "A machine-readable feed and semantic search, with typed prices in integer paise. Nothing an agent needs is buried in prose.",
-          },
-          {
-            icon: ShieldCheck,
-            title: "Bounded",
-            body: "A signed mandate carries a per-purchase cap, a total budget, a category allow-list and an expiry. Enforced server-side, every time.",
-          },
-          {
-            icon: Layers,
-            title: "Accountable",
-            body: "Every check, decision and rupee lands in an append-only hash chain you can verify with one request.",
-          },
-        ].map((card) => (
-          <div key={card.title} className="glass-flat rounded-2xl p-5">
-            <card.icon size={17} className="text-brand-400" />
-            <h3 className="mt-3.5 text-[14px] font-semibold">{card.title}</h3>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute-500">{card.body}</p>
-          </div>
-        ))}
+      {/*
+       * Six unequal tiles instead of three equal ones. The three cards here
+       * described the product; these show it — the real feed shape, the real
+       * mandate scope, the real chain, the real tool names — and the two that
+       * carry the argument get the space.
+       */}
+      <Reveal className="mt-14">
+        <Bento />
       </Reveal>
+
+      {/* Section divider */}
+      <div className="section-divider mx-auto mt-16 max-w-2xl" />
     </Section>
   );
 }
@@ -175,7 +179,7 @@ export function Mandate() {
             <Eyebrow index="02">The mandate</Eyebrow>
           </Reveal>
           <Reveal stagger>
-            <h2 className="mt-5 text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+            <h2 className="font-display mt-5 text-[clamp(2rem,3.8vw,3.1rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
               Consent once.
               <br />
               <span className="text-gradient">Spend within it, forever after.</span>
@@ -275,7 +279,7 @@ export function Failure() {
           <Eyebrow index="04">When it goes wrong</Eyebrow>
         </Reveal>
         <Reveal stagger>
-          <h2 className="mt-5 max-w-3xl text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+          <h2 className="font-display mt-5 max-w-3xl text-[clamp(2rem,3.8vw,3.1rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
             A refusal should teach the agent something.
           </h2>
           <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-mute-400">
@@ -357,7 +361,10 @@ export function Failure() {
               b: "A token edited to raise its own cap fails signature verification before any bound is consulted.",
             },
           ].map((item) => (
-            <div key={item.t} className="rounded-xl bg-white/[0.025] px-4 py-3.5">
+            <div
+              key={item.t}
+              className="lift rounded-xl border border-white/[0.05] bg-white/[0.025] px-4 py-3.5 hover:border-white/15 hover:bg-white/[0.04]"
+            >
               <h3 className="text-[12.5px] font-semibold text-mute-200">{item.t}</h3>
               <p className="mt-1 text-[11.5px] leading-relaxed text-mute-500">{item.b}</p>
             </div>
@@ -412,7 +419,7 @@ export function Mcp() {
             <Eyebrow index="06">Any agent can buy</Eyebrow>
           </Reveal>
           <Reveal stagger>
-            <h2 className="mt-5 text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+            <h2 className="font-display mt-5 text-[clamp(2rem,3.8vw,3.1rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
               Point an MCP client at it
               <br />
               <span className="text-gradient">and it can shop.</span>
@@ -434,7 +441,7 @@ export function Mcp() {
               ].map((tool) => (
                 <span
                   key={tool}
-                  className="rounded-md bg-white/[0.04] px-2 py-1 font-mono text-[10.5px] text-mute-400"
+                  className="lift rounded-md border border-white/[0.04] bg-white/[0.04] px-2 py-1 font-mono text-[10.5px] text-mute-400 hover:border-brand-500/40 hover:text-brand-300"
                 >
                   {tool}
                 </span>
@@ -483,9 +490,12 @@ export function Mcp() {
 export function Cta() {
   return (
     <Section className="pb-16 text-center">
+      {/* Decorative gradient divider above CTA */}
+      <div className="section-divider mx-auto mb-16 max-w-lg" />
+
       <Reveal stagger>
-        <h2 className="mx-auto max-w-2xl text-[clamp(2rem,4.2vw,3.2rem)] leading-[1.03] font-semibold tracking-[-0.035em]">
-          Watch it happen <span className="text-gradient">live.</span>
+        <h2 className="font-display mx-auto max-w-2xl text-[clamp(2.2rem,4.6vw,3.6rem)] leading-[1] font-semibold tracking-[-0.04em]">
+          Watch it happen <span className="text-gradient-shimmer">live.</span>
         </h2>
         <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-mute-400">
           The control room streams every guardrail decision, budget movement and audit row as it
@@ -495,7 +505,7 @@ export function Cta() {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/dashboard"
-            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-mute-100 px-6 text-[14px] font-semibold text-ink-950 transition-transform hover:scale-[1.03]"
+            className="gradient-border group inline-flex h-12 items-center gap-2 rounded-xl bg-mute-100 px-6 text-[14px] font-semibold text-ink-950 transition-transform hover:scale-[1.03]"
           >
             Open the control room
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
