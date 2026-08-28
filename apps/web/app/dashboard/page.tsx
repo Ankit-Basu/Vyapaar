@@ -98,15 +98,15 @@ export default function Dashboard() {
         id: "overview",
         label: "Overview",
         icon: LayoutGrid,
-        hint: "Everything at once",
+        hint: "Every panel at once",
         count: null,
       },
-      { id: "agent", label: "Buyer agent", icon: Bot, hint: "Give it a goal", count: null },
+      { id: "agent", label: "Buyer agent", icon: Bot, hint: "…the agent shops", count: null },
       {
         id: "intents",
         label: "Purchase intents",
         icon: ListChecks,
-        hint: "Checks and reasons",
+        hint: "…guardrails decide",
         count: counts.intents,
         // The only thing on this screen that is genuinely waiting on a person.
         tone: "gate",
@@ -116,7 +116,7 @@ export default function Dashboard() {
         id: "mandates",
         label: "Mandates",
         icon: Wallet,
-        hint: "Budget and scope",
+        hint: "Consent is granted…",
         count: counts.liveMandates,
         tone: "pass",
       },
@@ -124,7 +124,7 @@ export default function Dashboard() {
         id: "audit",
         label: "Audit trail",
         icon: ScrollText,
-        hint: "Hash-chained log",
+        hint: "…and it is all recorded",
         count: events.length,
       },
       {
@@ -147,65 +147,65 @@ export default function Dashboard() {
   const panes: Record<ViewId, ReactNode> = {
     overview: (
       <>
-        <div className="flex min-h-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-[1.15]" />
           <ScenarioRunner onActivity={bump} className="flex-1" />
         </div>
-        <div className="flex min-h-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
           <IntentsPanel refreshKey={refreshKey} className="flex-[1.25]" />
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 lg:col-span-4">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
     ),
     agent: (
       <>
-        <div className="flex min-h-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 lg:col-span-7">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 lg:col-span-5">
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     intents: (
       <>
-        <div className="flex min-h-0 lg:col-span-8">
+        <div className="flex min-h-0 min-w-0 lg:col-span-8">
           <IntentsPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 lg:col-span-4">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
     ),
     mandates: (
       <>
-        <div className="flex min-h-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 lg:col-span-7">
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 lg:col-span-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     audit: (
       <>
-        <div className="flex min-h-0 lg:col-span-8">
+        <div className="flex min-h-0 min-w-0 lg:col-span-8">
           <AuditFeed events={events} connection={connection} />
         </div>
-        <div className="flex min-h-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 lg:col-span-4">
           <IntentsPanel refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     scenarios: (
       <>
-        <div className="flex min-h-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 lg:col-span-7">
           <ScenarioRunner onActivity={bump} className="flex-1" />
         </div>
-        <div className="flex min-h-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 lg:col-span-5">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
@@ -216,9 +216,9 @@ export default function Dashboard() {
     <main className="relative flex h-dvh flex-col gap-3.5 overflow-hidden p-3.5 lg:flex-row xl:gap-5 xl:p-5">
       <MoltenBackground opacity={0.55} speed={0.18} scale={5} />
 
-      <DashboardNav items={items} active={view} onSelect={setView} />
+      <DashboardNav items={items} active={view} connection={connection} onSelect={setView} />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3.5 xl:gap-5">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3.5 xl:gap-5">
         <Header onReset={bump} refreshKey={refreshKey} connection={connection} />
 
         {/* The pulse stays put across views: changing section should never mean
