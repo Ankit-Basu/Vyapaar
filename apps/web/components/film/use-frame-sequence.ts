@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** A decoded frame is either an ImageBitmap (fast path) or an <img> fallback. */
 type Frame =
@@ -100,17 +100,17 @@ export function useFrameSequence(name: string) {
     };
   }, [name]);
 
-  function decode(i: number) {
+  const decode = useCallback((i: number) => {
     if (frames.current.has(i) || decoding.current.has(i) || !blobs.current[i]) return;
     decoding.current.add(i);
     decodeBlob(blobs.current[i]!)
       .then((f) => frames.current.set(i, f))
       .catch(() => {})
       .finally(() => decoding.current.delete(i));
-  }
+  }, []);
 
   /** decode ahead of the playhead, evict far-away frames */
-  function manageWindow(center: number) {
+  const manageWindow = useCallback((center: number) => {
     const AHEAD = 16;
     const KEEP = 32;
     for (let d = 0; d <= AHEAD; d++) {
@@ -127,19 +127,33 @@ export function useFrameSequence(name: string) {
         }
       }
     }
-  }
+  }, [decode]);
 
-  function nearestDecoded(i: number): Frame | null {
+  const nearestDecoded = useCallback((i: number): Frame | null => {
     if (frames.current.has(i)) return frames.current.get(i)!;
     for (let d = 1; d < countRef.current; d++) {
       if (frames.current.has(i - d)) return frames.current.get(i - d)!;
       if (frames.current.has(i + d)) return frames.current.get(i + d)!;
     }
     return null;
-  }
+  }, []);
 
-  /** progress ∈ [0,1] → draw the matching frame, contain-fit, on the canvas */
-  function draw(canvas: HTMLCanvasElement | null, progress: number) {
+  /**
+   * progress ∈ [0,1] → draw the matching frame, contain-fit, on the canvas.
+   *
+   * Stable across renders, and that stability is load-bearing. A consumer puts
+   * `draw` in the dependency array of the effect that builds its ScrollTrigger;
+   * with a fresh identity each render, scrolling set state, the render changed
+   * `draw`, the effect tore the trigger down and rebuilt it, and the rebuild's
+   * opening `draw(canvas, 0)` snapped the film back to frame 0. The captions
+   * advanced while the picture never moved.
+   *
+   * Everything it touches is a ref, so there is nothing to depend on.
+   */
+  const draw = useCallback(function draw(
+    canvas: HTMLCanvasElement | null,
+    progress: number,
+  ) {
     if (!canvas || countRef.current === 0) return;
     lastProgress.current = progress;
     const i = Math.round(Math.min(1, Math.max(0, progress)) * (countRef.current - 1));
@@ -162,7 +176,7 @@ export function useFrameSequence(name: string) {
     const w = src.width * s;
     const h = src.height * s;
     ctx.drawImage(src, (cw - w) / 2, (ch - h) / 2, w, h);
-  }
+  }, [manageWindow, nearestDecoded]);
 
   return { ready, draw, lastProgress };
 }
