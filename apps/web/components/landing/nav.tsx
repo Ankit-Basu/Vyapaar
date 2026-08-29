@@ -123,6 +123,12 @@ export function Nav() {
               <GithubMark className="size-[15px]" />
             </a>
             <Link
+              href="/story"
+              className="u-focus-ring hidden rounded-xl px-3 py-2 text-[12.5px] font-medium text-caption transition-colors hover:bg-white/[0.05] hover:text-heading sm:inline-flex"
+            >
+              The film
+            </Link>
+            <Link
               href="/dashboard"
               className="u-focus-ring skeu skeu-gloss group inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-canvas"
               style={{ background: "var(--color-accent)" }}

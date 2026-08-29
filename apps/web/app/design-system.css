@@ -709,3 +709,79 @@
     display: none;
   }
 }
+
+/* ============================================================== the film === */
+
+/*
+ * The footage is a coin in a graphite void, so the void should become the
+ * page rather than sit on it in a rectangle. Contain-fit keeps the coin whole
+ * at every aspect (never cover-crop a hero object), and the mask dissolves the
+ * frame's edges into the background.
+ */
+.film-canvas {
+  object-fit: contain;
+  mask-image: radial-gradient(
+    118% 96% at 50% 50%,
+    #000 42%,
+    rgba(0, 0, 0, 0.72) 68%,
+    transparent 96%
+  );
+  -webkit-mask-image: radial-gradient(
+    118% 96% at 50% 50%,
+    #000 42%,
+    rgba(0, 0, 0, 0.72) 68%,
+    transparent 96%
+  );
+}
+
+/* A scrim under the copy only, so type stays legible over the brightest
+   frames without dimming the coin itself. */
+.film-vignette {
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--color-canvas) 88%, transparent) 0%,
+      color-mix(in srgb, var(--color-canvas) 55%, transparent) 34%,
+      transparent 62%
+    ),
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-canvas) 70%, transparent),
+      transparent 38%
+    );
+}
+
+@media (max-width: 1023px) {
+  /* On a narrow screen the copy sits under the coin, so the scrim flips to
+     bottom-up rather than left-to-right. */
+  .film-vignette {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-canvas) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-canvas) 66%, transparent) 38%,
+      transparent 70%
+    );
+  }
+}
+
+/* Chapter copy arrives rather than cutting. Keyed on the chapter index, so it
+   replays each time the reader crosses a boundary in either direction. */
+@keyframes film-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.film-copy {
+  animation: film-copy-in 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .film-copy {
+    animation: none;
+  }
+}
