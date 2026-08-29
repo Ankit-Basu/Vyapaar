@@ -75,10 +75,10 @@ export function Panel({
          * silently cut off by the page's overflow-hidden: 28px lost at 1680,
          * 132px at 1366. It only looked fine above ~1850.
          */
-        "glass-surface glass-d2 panel panel-accent flex min-h-0 min-w-0 flex-col rounded-2xl border border-white/[0.08] shadow-xl backdrop-blur-xl transition-all duration-300",
+        "glass-surface glass-d2 pane-interactive pane-accent flex min-h-0 min-w-0 flex-col rounded-2xl",
         className,
       )}
-      style={{ "--accent": TONE_COLOR[accent] } as CSSProperties}
+      style={{ "--pane-accent-hue": TONE_COLOR[accent] } as CSSProperties}
     >
       {(title || actions) && (
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.06] px-5 py-4">

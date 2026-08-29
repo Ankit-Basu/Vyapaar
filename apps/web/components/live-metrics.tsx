@@ -176,14 +176,15 @@ function Tile({
 }) {
   return (
     <div
-      className="glass-surface glass-d2 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] p-3.5 shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.18] hover:shadow-xl"
-      style={{ "--accent": TONE_COLOR[tone] } as CSSProperties}
+      className="glass-surface glass-d2 pane-interactive pane-accent group relative flex flex-col justify-between overflow-hidden rounded-2xl p-4"
+      style={{ "--pane-accent-hue": TONE_COLOR[tone] } as CSSProperties}
     >
-      {/* Ambient background glow. Sits deliberately outside the tile and is
-          clipped by its overflow-hidden, so the falloff reads as light rather
-          than as a circle. Decorative only — never announced. */}
+      {/* The instrument's own light: a slow bloom under the numerals, clipped by
+          the tile so the falloff reads as light rather than as a circle. It is
+          the only thing on the strip that moves unprompted, which is what makes
+          the room look like it is running. Decorative — never announced. */}
       <div
-        className="pointer-events-none absolute -top-10 -right-10 size-24 rounded-full opacity-20 blur-xl transition-opacity duration-300 group-hover:opacity-40"
+        className="instrument-bloom pointer-events-none absolute -top-8 -right-6 size-28 rounded-full blur-2xl"
         style={{ background: TONE_COLOR[tone] }}
         aria-hidden
       />
@@ -205,13 +206,13 @@ function Tile({
         </div>
       </div>
 
-      <div className="relative mt-2 font-mono text-[19px] leading-tight font-semibold tracking-tight text-mute-100">
+      <div className="relative mt-3 font-mono text-[24px] leading-none font-semibold tracking-[-0.02em] text-mute-100 tabular-nums">
         {value}
       </div>
 
       {children}
 
-      <div className="relative mt-2 truncate text-[11px] leading-tight text-mute-400">
+      <div className="relative mt-2.5 truncate text-[11px] leading-tight text-mute-500">
         {footnote}
       </div>
     </div>

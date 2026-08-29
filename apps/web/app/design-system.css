@@ -127,13 +127,33 @@
 
   --glass-edge: rgba(255, 255, 255, 0.1);
   --glass-edge-strong: rgba(255, 255, 255, 0.16);
+
+  /*
+   * The underside.
+   *
+   * A pane lit from above catches light on its top edge and falls into shadow
+   * along its bottom one. Only the top highlight was declared, which is why the
+   * panels read as outlined rectangles rather than as objects with thickness —
+   * a highlight with no answering shadow has no depth to describe.
+   */
+  --glass-underside: inset 0 -14px 24px -20px rgba(0, 0, 0, 0.85);
+  /* A dim rim down the sides, where the light grazes rather than strikes. */
+  --glass-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
   /* The specular line along the top edge. Without this a glass surface reads
      as a translucent rectangle; with it, it reads as something lit. */
   --glass-specular: rgba(255, 255, 255, 0.22);
 
-  --glass-shadow-1: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
-  --glass-shadow-2: 0 12px 32px -8px rgba(0, 0, 0, 0.62);
-  --glass-shadow-3: 0 24px 56px -12px rgba(0, 0, 0, 0.72);
+  /*
+   * Two shadows per elevation, not one: a tight contact shadow that says where
+   * the pane meets the surface, and a wide ambient one that says how far above
+   * it floats. A single blur can only ever express one of the two.
+   */
+  --glass-shadow-1:
+    0 2px 4px -2px rgba(0, 0, 0, 0.55), 0 8px 20px -8px rgba(0, 0, 0, 0.45);
+  --glass-shadow-2:
+    0 3px 8px -3px rgba(0, 0, 0, 0.6), 0 18px 44px -12px rgba(0, 0, 0, 0.58);
+  --glass-shadow-3:
+    0 4px 12px -4px rgba(0, 0, 0, 0.66), 0 32px 72px -16px rgba(0, 0, 0, 0.7);
 
   --glass-blur-1: 24px;
   --glass-blur-2: 32px;
@@ -307,6 +327,8 @@
   background: var(--glass-sheen-layer), var(--glass-fill-2);
   box-shadow:
     inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-rim),
+    var(--glass-underside),
     var(--glass-shadow-2);
   backdrop-filter: blur(var(--glass-blur-2)) saturate(140%);
 }
@@ -323,6 +345,8 @@
   background: var(--glass-sheen-layer), var(--glass-fill-1);
   box-shadow:
     inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-rim),
+    var(--glass-underside),
     var(--glass-shadow-1);
   backdrop-filter: none;
 }
@@ -331,6 +355,8 @@
   background: var(--glass-sheen-layer), var(--glass-fill-1);
   box-shadow:
     inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-rim),
+    var(--glass-underside),
     var(--glass-shadow-1);
   backdrop-filter: blur(var(--glass-blur-1)) saturate(135%);
 }
@@ -340,6 +366,8 @@
   border-color: var(--glass-edge-strong);
   box-shadow:
     inset 0 1px 0 0 var(--glass-specular),
+    var(--glass-rim),
+    var(--glass-underside),
     var(--glass-shadow-3);
   backdrop-filter: blur(var(--glass-blur-3)) saturate(150%);
 }
@@ -589,5 +617,95 @@
   }
   .skeu:active:not(:disabled) {
     transform: none;
+  }
+}
+
+/* ========================================================= control room === */
+
+/*
+ * A pane that responds to the pointer.
+ *
+ * Only the edge and the ambient shadow move — no transform, because these
+ * surfaces carry live text and nudging them a pixel makes it resample. The
+ * light appearing to catch the edge is enough to read as "this is interactive"
+ * without anything actually moving.
+ */
+.pane-interactive {
+  transition:
+    border-color 220ms var(--ease-glass),
+    box-shadow 220ms var(--ease-glass);
+}
+.pane-interactive:hover {
+  border-color: var(--glass-edge-strong);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+    var(--glass-rim),
+    var(--glass-underside),
+    0 3px 8px -3px rgba(0, 0, 0, 0.6),
+    0 22px 52px -12px rgba(0, 0, 0, 0.62);
+}
+
+/*
+ * The hairline of colour along a panel's top edge.
+ *
+ * It rides *on* the specular highlight rather than sitting under it, so the
+ * accent reads as light caught in the glass rather than as a coloured border
+ * drawn on top of it.
+ */
+.pane-accent {
+  position: relative;
+}
+.pane-accent::before {
+  content: "";
+  position: absolute;
+  inset: -1px auto auto 0;
+  width: 100%;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--pane-accent-hue, var(--color-brand-500)) 70%, transparent) 22%,
+    color-mix(in srgb, var(--pane-accent-hue, var(--color-brand-500)) 90%, transparent) 50%,
+    color-mix(in srgb, var(--pane-accent-hue, var(--color-brand-500)) 70%, transparent) 78%,
+    transparent
+  );
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/*
+ * A slow bloom under the numerals on an instrument tile. It is the only thing
+ * on the strip that moves on its own, so the room reads as running rather than
+ * as a screenshot of one.
+ */
+@keyframes instrument-bloom {
+  0%,
+  100% {
+    opacity: 0.16;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.12);
+  }
+}
+.instrument-bloom {
+  animation: instrument-bloom 7s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .instrument-bloom {
+    animation: none !important;
+  }
+  .pane-interactive {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pane-accent::before {
+    display: none;
   }
 }
