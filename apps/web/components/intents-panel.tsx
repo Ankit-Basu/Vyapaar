@@ -187,7 +187,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
         <span className="shrink-0 font-mono text-[13px] font-semibold tabular-nums text-mute-200">
           {formatPaise(intent.amount_paise)}
         </span>
-        <span className="hidden shrink-0 text-[11px] text-mute-500 sm:inline font-mono">
+        <span className="hidden shrink-0 font-mono text-[11px] text-mute-500 2xl:inline">
           {timeAgo(intent.created_at)}
         </span>
       </button>
@@ -196,7 +196,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
         <div>
           <div className="mt-3 ml-[1.4rem] space-y-3">
             {intent.agent_rationale && (
-              <p className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-[12px] leading-relaxed text-mute-300 shadow-inner">
+              <p className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-[12px] leading-relaxed text-mute-300 shadow-inner [overflow-wrap:anywhere]">
                 <span className="font-semibold text-brand-300">Agent&rsquo;s reason: </span>
                 {intent.agent_rationale}
               </p>
@@ -216,7 +216,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
                     <Badge tone={toneForStatus(check.status)} className="mt-0.5 shrink-0">
                       {check.status}
                     </Badge>
-                    <span className="text-[12px] leading-relaxed text-mute-300">
+                    <span className="text-[12px] leading-relaxed text-mute-300 [overflow-wrap:anywhere]">
                       <span className="font-semibold text-mute-100">{check.name}</span>
                       <span className="block text-[12px] text-mute-400">{check.reason}</span>
                     </span>
@@ -272,7 +272,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
 
             {intent.status === "APPROVED" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
-                <span className="flex-1 text-[12px] leading-relaxed text-mute-400">
+                <span className="flex-1 text-[12px] leading-relaxed text-mute-400 [overflow-wrap:anywhere]">
                   Approved and awaiting payment. It becomes PAID only when a webhook with a valid
                   signature arrives.
                 </span>
@@ -306,7 +306,7 @@ function IntentRow({ intent, onChanged }: { intent: PurchaseIntent; onChanged: (
             )}
 
             {note && (
-              <p className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[12px] leading-relaxed text-mute-300">
+              <p className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[12px] leading-relaxed text-mute-300 [overflow-wrap:anywhere]">
                 {note}
               </p>
             )}

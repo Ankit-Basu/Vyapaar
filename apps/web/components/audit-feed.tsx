@@ -226,7 +226,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
             {event.reasons.length > 0 && (
               <ul className="space-y-1">
                 {event.reasons.map((reason, i) => (
-                  <li key={i} className="text-[12px] leading-relaxed text-mute-300">
+                  <li key={i} className="text-[12px] leading-relaxed text-mute-300 [overflow-wrap:anywhere]">
                     {reason}
                   </li>
                 ))}
@@ -239,7 +239,7 @@ function AuditRow({ event, isNewest }: { event: AuditEvent; isNewest: boolean })
                     <Badge tone={toneForStatus(check.status)} className="mt-px shrink-0">
                       {check.status}
                     </Badge>
-                    <span className="text-[12px] leading-relaxed text-mute-400">
+                    <span className="text-[12px] leading-relaxed text-mute-400 [overflow-wrap:anywhere]">
                       <span className="font-medium text-mute-300">{check.id}</span> — {check.reason}
                     </span>
                   </li>

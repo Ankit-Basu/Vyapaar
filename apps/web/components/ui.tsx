@@ -67,7 +67,15 @@ export function Panel({
   return (
     <section
       className={cn(
-        "glass-surface glass-d2 panel panel-accent flex min-h-0 flex-col rounded-2xl border border-white/[0.08] shadow-xl backdrop-blur-xl transition-all duration-300",
+        /*
+         * `min-w-0` is not cosmetic. A Panel is a flex child of its grid cell,
+         * and a flex child defaults to `min-width: auto` -- it refuses to
+         * shrink below the intrinsic width of its content. Without this the
+         * panel held its natural width, spilled out of its track, and was
+         * silently cut off by the page's overflow-hidden: 28px lost at 1680,
+         * 132px at 1366. It only looked fine above ~1850.
+         */
+        "glass-surface glass-d2 panel panel-accent flex min-h-0 min-w-0 flex-col rounded-2xl border border-white/[0.08] shadow-xl backdrop-blur-xl transition-all duration-300",
         className,
       )}
       style={{ "--accent": TONE_COLOR[accent] } as CSSProperties}
@@ -102,7 +110,7 @@ export function Panel({
         </header>
       )}
       {toolbar && (
-        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.04] bg-white/[0.01] px-4 py-2.5">
+        <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-1.5 border-b border-white/[0.04] bg-white/[0.01] px-4 py-2.5">
           {toolbar}
         </div>
       )}

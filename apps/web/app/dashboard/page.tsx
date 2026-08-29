@@ -147,65 +147,65 @@ export default function Dashboard() {
   const panes: Record<ViewId, ReactNode> = {
     overview: (
       <>
-        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 xl:col-span-4 xl:gap-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-[1.15]" />
           <ScenarioRunner onActivity={bump} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 lg:col-span-4 xl:gap-5">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 xl:col-span-4 xl:gap-5">
           <IntentsPanel refreshKey={refreshKey} className="flex-[1.25]" />
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 xl:col-span-4">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
     ),
     agent: (
       <>
-        <div className="flex min-h-0 min-w-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 xl:col-span-7">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 xl:col-span-5">
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     intents: (
       <>
-        <div className="flex min-h-0 min-w-0 lg:col-span-8">
+        <div className="flex min-h-0 min-w-0 xl:col-span-8">
           <IntentsPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 xl:col-span-4">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
     ),
     mandates: (
       <>
-        <div className="flex min-h-0 min-w-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 xl:col-span-7">
           <MandatesPanel refreshKey={refreshKey} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 xl:col-span-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     audit: (
       <>
-        <div className="flex min-h-0 min-w-0 lg:col-span-8">
+        <div className="flex min-h-0 min-w-0 xl:col-span-8">
           <AuditFeed events={events} connection={connection} />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-4">
+        <div className="flex min-h-0 min-w-0 xl:col-span-4">
           <IntentsPanel refreshKey={refreshKey} className="flex-1" />
         </div>
       </>
     ),
     scenarios: (
       <>
-        <div className="flex min-h-0 min-w-0 lg:col-span-7">
+        <div className="flex min-h-0 min-w-0 xl:col-span-7">
           <ScenarioRunner onActivity={bump} className="flex-1" />
         </div>
-        <div className="flex min-h-0 min-w-0 lg:col-span-5">
+        <div className="flex min-h-0 min-w-0 xl:col-span-5">
           <AuditFeed events={events} connection={connection} />
         </div>
       </>
@@ -225,7 +225,7 @@ export default function Dashboard() {
             losing the numbers the room is actually judged by. */}
         <LiveMetrics events={events} connection={connection} />
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 lg:grid-cols-12 xl:gap-5">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 xl:grid-cols-12 xl:gap-5">
           {panes[view]}
         </div>
       </div>
