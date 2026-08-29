@@ -1,199 +1,193 @@
 # AgentMandi
 
-**An agent commerce layer.** It takes an ordinary Razorpay test-mode merchant and makes it
-discoverable and transactable by an external AI buyer agent — discovery through payment —
-with every money action bounded, gated, explained, and written to a tamper-evident audit trail.
-
-Razorpay's own pilots put conversational checkout *inside* a merchant's app. The open problem
-is the other side: exposing a merchant so that **any** outside agent can shop and pay. That is
-what this builds.
+<div align="center">
 
 ```
-Point an MCP client at this server and it can buy from the merchant, under a mandate,
-without a human touching the checkout — and without being able to exceed what the human allowed.
+   █████╗  ██████╗ ███████╗███╗   ██╗████████╗███╗   ███╗ █████╗ ███╗   ██╗██████╗ ██╗
+  ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝████╗ ████║██╔══██╗████╗  ██║██╔══██╗██║
+  ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ██╔████╔██║███████║██╔██╗ ██║██║  ██║██║
+  ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ██║╚██╔╝██║██╔══██║██║╚██╗██║██║  ██║██║
+  ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ██║ ╚═╝ ██║██║  ██║██║ ╚████║██████╔╝██║
+  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝
+```
+
+**Authorising The Machine — A Cryptographically Guarded Commerce & Mandate Layer for AI Agents**
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-15.0+-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Node](https://img.shields.io/badge/Node.js-20+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Razorpay](https://img.shields.io/badge/Razorpay-Testnet-0C2340?style=flat&logo=razorpay&logoColor=white)](https://razorpay.com)
+[![Model Context Protocol](https://img.shields.io/badge/MCP-Standard-orange?style=flat)](https://modelcontextprotocol.io)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+</div>
+
+---
+
+## Overview
+
+**AgentMandi** transforms standard e-commerce and retail merchants into machine-discoverable, transactable endpoints for autonomous AI buyer agents. 
+
+While conventional commerce pilots focus on embedding conversational chat widgets *inside* a merchant's storefront, **AgentMandi solves the inverse and fundamentally harder problem**: exposing a merchant's inventory and checkout infrastructure so that **any outside AI agent** can browse, negotiate, evaluate, and purchase under cryptographically signed human mandates—without the agent ever being trusted with private payment keys, unbounded wallets, or carte blanche authority.
+
+```
+Point any MCP-compliant agent (Claude Desktop, Cursor, Custom Agent) at this protocol,
+and it can discover products, evaluate bounds, and execute payments under strict human mandates —
+without a human touching the checkout, and with zero possibility of exceeding authorized bounds.
 ```
 
 ---
 
-## The bar, and where to look
+## Key Pillars & Invariants
 
-| Requirement | Where it lives | See it |
-| --- | --- | --- |
-| **Explainable** — every money action | `services/api/app/policy/engine.py` | `GET /intents/{id}/decision` — eight ordered checks, each with a reason |
-| **Bounded** — caps enforced server-side | `services/api/app/mandate/service.py` | Mandate meters on the dashboard; a token edited to raise its own cap is refused |
-| **Gated** — human in the loop | `policy/engine.py` check 8 + dashboard | Run the `human_gate` scenario, then click Approve |
-| **Audit trail** — visible and tamper-evident | `services/api/app/audit/log.py` | `GET /audit/verify`; live SSE feed in the right column |
-| **Graceful failure** | four separate scenarios | `budget_exceeded`, `out_of_stock`, `payment_failure`, `forged_mandate` |
-| **Any agent can transact** | `services/api/app/mcp_server.py` | Seven MCP tools over the merchant's public HTTP API |
+| Principle | Technical Implementation | Proof & Verification |
+| :--- | :--- | :--- |
+| **Explainable Decisions** | Pure functional guardrail evaluation in `services/api/app/policy/engine.py`. | `GET /intents/{id}/decision` returns individual verdicts and human-readable reasons for all 8 checks. |
+| **Deterministic Budget Bounds** | Signed HMAC-SHA256 JWT tokens encoding per-transaction ceilings, total budgets, and allowed categories. | Mandate meters on dashboard; forged tokens or tamper attempts fail signature checks before bounds are consulted. |
+| **Human-in-the-Loop (HITL)** | High-value purchases (≥ ₹5,000 threshold) trigger `gate_for_human` state. | The operator reviews and waives the value threshold in the control room; background checks re-evaluate against real-time state. |
+| **Tamper-Evident Audit Chain** | Append-only SQLite ledger chained via `sha256(prev_hash + canonical_json(event))`. | DB triggers block `UPDATE` and `DELETE`. `GET /audit/verify` confirms chain integrity or pinpoints broken sequences. |
+| **Graceful Agent Recovery** | Machine-readable rejection payloads with explicit shortfall metrics. | The buyer agent re-plans inside the same execution run (e.g., searches for lower-priced alternatives when budget is exhausted). |
+| **Universal Agent Compatibility** | 7 Model Context Protocol (MCP) tools operating over public HTTP APIs. | Any MCP-compliant client can discover products, verify mandates, and transact without proprietary SDKs. |
 
 ---
 
-## Architecture
+## Architectural Workflow
 
 ```mermaid
 flowchart TB
-    subgraph outside["Outside the merchant"]
-        MCP["Any MCP client<br/>(Claude Desktop, etc.)"]
-        AGENT["Buyer agent<br/>(demo driver)"]
+    subgraph external["External Ecosystem"]
+        MCP["Any MCP Client<br/>(Claude Desktop / Cursor)"]
+        AGENT["Autonomous Buyer Agent<br/>(LLM / Planner)"]
     end
 
-    subgraph api["AgentMandi API — FastAPI"]
-        CAT["Catalog<br/>ACP-style feed + hybrid search"]
-        MAN["Mandate service<br/>AP2-style signed JWT"]
-        POL["⛔ Guardrail engine<br/>8 ordered checks"]
-        PAY["Payment service<br/>Razorpay test mode"]
-        AUD["Audit log<br/>append-only hash chain"]
+    subgraph gateway["AgentMandi Protocol Layer (FastAPI)"]
+        CAT["Catalog Service<br/>ACP Machine-Readable Feed + Hybrid BM25 / Vector Search"]
+        MAN["Mandate Engine<br/>HMAC-SHA256 Signed JWT Scope Tokens"]
+        POL["⛔ 8-Point Guardrail Gauntlet<br/>Pure Functional Policy Evaluator"]
+        PAY["Payment Engine<br/>Razorpay Testnet & HMAC Webhook Verifier"]
+        AUD["Audit Logger<br/>Append-Only SHA-256 Hash Chain"]
     end
 
-    RZP["Razorpay<br/>Orders · Payment Links · Webhooks"]
-    DASH["Dashboard<br/>Next.js + SSE"]
-    HUMAN(["Human"])
+    subgraph settlement["Settlement & Interfaces"]
+        RZP["Razorpay Gateway<br/>Orders · Payment Links · Webhooks"]
+        DASH["Live Control Room<br/>Next.js 15 + Real-Time SSE Stream"]
+        HUMAN(["Human Operator"])
+    end
 
     MCP --> CAT
     MCP --> POL
     AGENT --> CAT
     AGENT --> POL
 
-    HUMAN -- "grants consent" --> MAN
-    MAN -- "scope + caps" --> POL
+    HUMAN -- "1. Grants 1-time mandate" --> MAN
+    MAN -- "2. Supplies scope & budget limits" --> POL
 
-    POL -- "auto_approve only" --> PAY
-    POL -- "gate_for_human" --> DASH
-    DASH -- "approve / reject" --> POL
-    POL -. "deny — no money moves" .-> AGENT
+    POL -- "3a. auto_approve (all 8 pass)" --> PAY
+    POL -- "3b. gate_for_human (≥ ₹5,000)" --> DASH
+    DASH -- "Operator approval / reject" --> POL
+    POL -. "3c. deny (violates bounds)" .-> AGENT
 
     PAY <--> RZP
-    RZP -- "signed webhook" --> PAY
-    PAY -- "PAID only after<br/>signature verifies" --> AUD
+    RZP -- "Signed Webhook (HMAC-SHA256)" --> PAY
+    PAY -- "Marks PAID only after<br/>signature verification" --> AUD
 
     CAT --> AUD
     MAN --> AUD
     POL --> AUD
-    AUD -- "live stream" --> DASH
+    AUD -- "Live Server-Sent Events" --> DASH
 ```
 
-**The one invariant everything else serves:** money moves only through the payment service, and
-only after the guardrail engine returns `auto_approve`. The buyer agent is treated as untrusted.
-It has no path to a charge that does not pass `POST /intents` first.
+### The Ironclad Invariant
+**Money moves only through the payment service, and only when the guardrail engine issues `auto_approve`.** The buyer agent is treated as an untrusted actor with zero direct access to merchant payment credentials or database writes.
 
 ---
 
-## Quickstart
+## The 8-Point Guardrail Gauntlet
 
-Requires Python 3.12+ and Node 20+. **No API keys are needed** — with an empty `.env` the demo
-runs end to end on the built-in payment simulator and a deterministic planner.
+Every purchase intent evaluates against an ordered gauntlet of deterministic checks (`services/api/app/policy/engine.py`). Evaluation is executed as a **pure function** without external network dependencies, ensuring complete reproducibility from audit payloads.
 
-```bash
-git clone https://github.com/Ankit-Basu/AgentMandi.git && cd AgentMandi
+```
+[Intent] ──► (1) Mandate Valid? ──► (2) Merchant Match? ──► (3) Product & Price Valid? ──► (4) Category Allowed?
+                  │                      │                         │                           │
+                 FAIL                   FAIL                      FAIL                        FAIL
+                  │                      │                         │                           │
+                  ▼                      ▼                         ▼                           ▼
+[DENIED] ◄──────────────────────────────────────────────────────────────────────────────────────┘
+                  ▲                      ▲                         ▲                           ▲
+                  │                      │                         │                           │
+[Intent] ──► (5) Txn Cap Pass? ──► (6) Budget Available? ──► (7) Stock Available? ──► (8) Under High-Value Gate?
+                                                                                               │
+                                                                                           OVER LIMIT
+                                                                                               │
+                                                                                               ▼
+                                                                                      [GATE_FOR_HUMAN]
 ```
 
-**1 · API**
+| Sequence | Guardrail Check | Failure Condition | Security & Business Rationale |
+| :---: | :--- | :--- | :--- |
+| **01** | `mandate_valid` | Signature mismatch, expired timestamp, or revoked ID. | Guarantees the agent holds genuine, unexpired human consent. |
+| **02** | `merchant_match` | Intent targets a merchant different from the mandate recipient. | Prevents token reuse across unauthorized third-party stores. |
+| **03** | `product_exists` | SKU not found, invalid quantity, or **price != catalog price**. | **Crucial:** Prevents an agent from naming its own purchase price. |
+| **04** | `category_allowed`| Product category is outside the authorized allow-list. | Restricts agent purchases strictly to permitted domains (e.g., office equipment). |
+| **05** | `per_txn_cap` | Item amount exceeds the authorized single-transaction ceiling. | Enforces micro-caps on individual checkout events. |
+| **06** | `budget_remaining` | Amount exceeds total budget minus spend minus in-flight holds. | Prevents overspending beyond cumulative authorized wallet allocations. |
+| **07** | `stock_available` | Merchant physical inventory is zero or insufficient. | Blocks charges on out-of-stock items before payment links open. |
+| **08** | `high_value_gate` | Purchase amount ≥ Human-in-the-Loop threshold (₹5,000). | Triggers `gate_for_human`; pauses payment until explicit operator sign-off. |
 
-```bash
-python -m venv .venv
-```
-
-```bash
-.venv/Scripts/activate || source .venv/bin/activate
-```
-
-```bash
-pip install -r services/api/requirements-dev.txt
-```
-
-```bash
-cd services/api && python -m uvicorn app.main:app --reload --port 8000
-```
-
-**2 · Dashboard** (second terminal)
-
-```bash
-npm install
-```
-
-```bash
-npm run dev
-```
-
-<http://localhost:3000> is the landing page, <http://localhost:3000/dashboard> is the live
-control room, the API is on <http://127.0.0.1:8000>, and interactive API docs are on
-<http://127.0.0.1:8000/docs>.
-
-On first boot the API creates its SQLite database and ingests the 33-product seed catalog.
+> **Evaluation Short-Circuiting**: If check #3 fails, checks #4–#8 are recorded in the audit trail as `skipped` rather than dropped silently, giving total visibility into the exact step where evaluation terminated.
 
 ---
 
-## Demo script — under three minutes
+## Budget Accounting: Reserve → Settle | Release
 
-Hit **Reset demo** in the dashboard header first, so the audit trail starts clean.
+To eliminate double-spending and handle concurrent agent checkouts safely, AgentMandi uses an atomic **Reserve → Settle \| Release** ledger lifecycle:
 
-### Happy path (~45s)
-
-1. **Grant a mandate** in the Buyer agent panel — ₹3,000 per purchase, ₹10,000 total,
-   electronics and office only. This is the human consent step; the agent cannot mint one.
-2. Type **`buy a wireless mouse under 1500`** and hit Run.
-3. Watch the transcript: it searches, picks the Aurora Wireless Optical Mouse *with a stated
-   reason*, raises an intent, clears all eight guardrails, opens a Razorpay order and payment
-   link, and settles.
-4. Open the intent in the middle column. **Every check is listed in order with its reason.**
-5. The audit feed on the right filled in live, and the header says *chain intact*.
-
-### Gated purchase (~30s)
-
-1. Run the **High-value purchase waits for a human** scenario.
-2. The agent stops. Seven checks pass; the eighth returns `gate_for_human` because ₹7,999 is
-   over the ₹5,000 threshold. The mandate meter shows the money **held**, not spent.
-3. Click **Approve**. Approving re-runs every other guardrail against current state — a human
-   waives the threshold, not stock, category or budget.
-4. Click **Pay with test card**. It settles, and the held money becomes spent.
-
-### Graceful failure (~45s) — pick one
-
-- **Budget exhausted** — the agent buys a mouse, then a ₹4,499 keyboard is attempted. It clears
-  the per-transaction cap by ₹1 but breaches what is actually left, so `budget_remaining` denies
-  it and *names the shortfall in rupees*. The agent re-searches under the remaining budget and
-  buys the ₹2,499 wireless keyboard instead.
-- **Card declined** — an approved purchase reaches checkout and the card is declined. The intent
-  goes `FAILED` and the budget hold is **released**: a charge that did not succeed never consumes
-  the buyer's budget.
-- **Out of stock mid-flow** — the last unit sells to someone else between the agent's search and
-  its intent. The stock guardrail refuses the sale and the agent re-plans *inside the same run*.
-- **Tampered mandate** — a token edited to raise its own cap to ₹999,999 fails signature
-  verification before any bound is even consulted.
-
-### The landing page
-
-<http://localhost:3000> walks through the same story before you open the control room. Two
-sections pin and scrub as you scroll, because both are *sequences* and letting the reader drive
-the pace explains them better than a static diagram: the eight guardrails illuminating one by
-one against a filling progress rail, and the audit chain assembling block by block before a
-historical row is edited and every link after it breaks.
-
-Both share one visual language with the dashboard — translucent glass over a slow aurora — so
-moving between them reads as one product. Everything is built on GSAP + ScrollTrigger, and the
-whole page has a real `prefers-reduced-motion` branch: under it the timelines are never created
-and the end state is applied directly, so nothing is hidden behind an animation that never
-plays.
-
-### The audit trail (~20s)
-
-```bash
-curl -s http://127.0.0.1:8000/audit/verify
+```
+[Agent Intent Created]
+         │
+         ▼
+[Guardrail Evaluated] ──(auto_approve / gate_for_human)──► [BUDGET RESERVED / HELD]
+                                                                   │
+                         ┌─────────────────────────────────────────┴───────────────────────────┐
+                         ▼                                                                     ▼
+             [Webhook: payment.paid]                                              [Webhook: payment.failed / Expired]
+                         │                                                                     │
+                         ▼                                                                     ▼
+               [BUDGET SETTLED (PAID)]                                             [HOLD RELEASED BACK TO WALLET]
 ```
 
-Every row is `sha256(prev_hash + canonical_json(row))`. `UPDATE` and `DELETE` on the table are
-blocked by SQLite triggers, not merely by convention — and if someone goes around the application
-entirely, `verify_chain()` reports the exact sequence number where the chain breaks.
+1. **Reserve**: When an intent is approved or held for human review, the required paise amount is **reserved** in SQLite using atomic conditional updates.
+2. **Settle**: When Razorpay sends a signature-verified `payment_link.paid` webhook, the held amount is converted to permanent spend.
+3. **Release**: If the card is declined, the gateway errors, or the operator rejects the gate, the hold is **released back** to the agent's available budget.
 
 ---
 
-## Any agent can buy: the MCP server
+## Live Cryptographic Audit Trail
 
-This is the strongest proof that the merchant is genuinely open to outside agents. The MCP
-server is a thin adapter over the merchant's **public HTTP API** rather than an in-process
-shortcut, which is how a merchant would actually ship it.
+Every state change across the protocol (mandate grants, search queries, policy decisions, checkout orders, and webhook settlements) is written to an append-only cryptographic hash chain.
 
-Add to your MCP client config (`claude_desktop_config.json` or equivalent):
+$$\text{hash}_n = \text{SHA-256}\Big(\text{hash}_{n-1} + \text{canonical\_json}(\text{event}_n)\Big)$$
+
+- **Database Triggers**: Native SQLite triggers block `UPDATE` and `DELETE` operations on the `audit_events` table.
+- **Verification API**: `GET /audit/verify` traverses the entire history from genesis block `#1` to verify cryptographic continuity. If a malicious actor alters a historic record in SQLite, verification reports the exact broken block sequence number:
+
+```json
+{
+  "valid": false,
+  "length": 7,
+  "broken_at_seq": 3,
+  "detail": "Hash mismatch at sequence #3: expected '5c8e1a2b...', calculated '9a0f41d2...'"
+}
+```
+
+---
+
+## Model Context Protocol (MCP) Server
+
+AgentMandi exposes a standardized MCP server (`services/api/app/mcp_server.py`) over its public HTTP endpoints. Any MCP-compatible client can operate as an autonomous purchasing agent.
+
+### Client Configuration (`claude_desktop_config.json`)
 
 ```json
 {
@@ -202,162 +196,211 @@ Add to your MCP client config (`claude_desktop_config.json` or equivalent):
       "command": "D:\\AgentMandi\\.venv\\Scripts\\python.exe",
       "args": ["-m", "app.mcp_server"],
       "cwd": "D:\\AgentMandi\\services\\api",
-      "env": { "AGENTMANDI_API_URL": "http://127.0.0.1:8000" }
+      "env": {
+        "AGENTMANDI_API_URL": "http://127.0.0.1:8000"
+      }
     }
   }
 }
 ```
 
-| Tool | What it does |
-| --- | --- |
-| `search_catalog` | Natural-language search with a hard price ceiling in paise |
-| `get_product` | Full typed record for one product |
-| `create_purchase_intent` | **Runs every guardrail.** Returns `auto_approve` / `gate_for_human` / `deny` with each check and its reason |
-| `confirm_purchase` | Opens a Razorpay order and payment link — refuses anything not `APPROVED` |
-| `get_merchant_info` | How to buy here, for an agent arriving cold |
-| `check_mandate` | Remaining budget, so an agent can bound its search before it shops |
-| `check_intent` | Current status of an intent — did the payment actually settle? |
+### Exposed MCP Tools
 
-Get a mandate token to hand the agent:
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `search_catalog` | `query: str`, `max_price_paise: int?`, `category: str?` | Natural-language semantic and hybrid keyword search across merchant inventory. |
+| `get_product` | `product_id: str` | Retrieves complete machine-readable product schema with inventory and pricing. |
+| `check_mandate` | `mandate_token: str` | Inspects remaining spendable balance, per-transaction limits, and authorized categories. |
+| `create_purchase_intent` | `mandate_token: str`, `product_id: str`, `amount_paise: int`, `quantity: int` | **Executes the 8-point guardrail gauntlet.** Returns decision outcome with full check explanations. |
+| `confirm_purchase` | `intent_id: str` | Initiates checkout order and returns Razorpay payment link. Refuses unapproved intents. |
+| `check_intent` | `intent_id: str` | Checks real-time settlement status of an active purchase intent. |
+| `get_merchant_info` | *None* | Retrieves merchant policies, support contacts, and mandate requirements for arriving agents. |
+
+---
+
+## Interactive Scenarios & Graceful Failure Proofs
+
+The built-in scenario harness (`services/api/app/demo/`) allows operators to trigger and observe real-world edge cases with live audit streaming:
+
+1. **Happy Path (`transactable end to end`)**: An agent requests a wireless mouse under ₹1,500, verifies bounds, passes all 8 checks, opens a Razorpay order, settles via webhook, and logs the hash.
+2. **High-Value HITL Gate (`gated`)**: An agent purchases a premium item (₹7,999); check #8 triggers `gate_for_human`. The dashboard displays an approval modal; approving re-verifies background bounds and settles.
+3. **Budget Exhausted & Re-planning (`graceful failure`)**: An agent attempts to buy a keyboard exceeding remaining wallet balance. Check #6 denies the intent and explicitly names the shortfall in rupees. The agent re-plans inside the same run, selecting a budget-compliant model.
+4. **Card Declined & Hold Release (`graceful failure`)**: An approved checkout fails payment authorization. The intent transitions to `FAILED` and the held funds are released immediately back to the mandate.
+5. **Out of Stock Mid-Flow (`graceful failure`)**: Inventory sells out between search and checkout. Check #7 rejects the purchase; the agent aborts without moving money.
+6. **Tampered Mandate Rejection (`explainable, bounded`)**: A client alters a signed JWT token to raise its budget to ₹999,999. Check #1 fails cryptographic signature verification immediately.
+7. **Off-Scope Category Refusal (`bounded`)**: An agent authorized only for `office` attempts to buy from `fitness`. Check #4 denies the purchase with an explicit category violation reason.
+
+---
+
+## Tech Stack
+
+### Frontend & Control Room
+- **Framework**: Next.js 15 (App Router, React 19, Turbopack)
+- **Styling**: Tailwind CSS, Vanilla CSS Design System, Specular Glassmorphism (`#141416` Obsidian + `#ffb77b` Warm Kinetic Amber)
+- **Animations**: GSAP 3.12 (ScrollTrigger pin-and-scrub timelines, responsive matchMedia, reduced-motion fallbacks)
+- **Streaming**: Server-Sent Events (SSE) subscriber with automatic reconnection and sliding-window activity metrics
+
+### Backend & Protocol Layer
+- **Framework**: FastAPI (Python 3.12+), Pydantic v2
+- **Database**: SQLite with WAL mode, JSON1 extensions, and recursive hash triggers
+- **Search Engine**: Hybrid BM25 keyword ranking + numpy cosine vector similarity
+- **Payments**: Razorpay Testnet API + built-in HMAC-SHA256 test simulator
+- **LLM Integrations**: Provider-agnostic engine supporting Google Gemini, Groq, local Ollama, or deterministic offline planning
+
+---
+
+## Monorepo Layout
+
+```
+AgentMandi/
+├── apps/
+│   └── web/                               # Next.js 15 Frontend & Control Room
+│       ├── app/
+│       │   ├── page.tsx                   # Landing Page (GSAP narrative walkthrough)
+│       │   ├── dashboard/page.tsx         # Live Control Room (Telemetry, HITL, Feed)
+│       │   └── login/page.tsx             # Holographic Wireframe Gateway
+│       ├── components/
+│       │   ├── landing/                   # Hero, Bento, Gauntlet & Audit Scenes
+│       │   ├── agent-console.tsx          # Interactive Buyer Agent Console
+│       │   ├── scenario-runner.tsx        # Multi-Scenario Test Suite Panel
+│       │   ├── intents-panel.tsx          # Purchase Intents Ledger & Gate Modal
+│       │   ├── mandates-panel.tsx         # Active Mandate Meter & JWT Inspector
+│       │   ├── audit-feed.tsx             # Real-time SSE Cryptographic Audit Feed
+│       │   └── logo.tsx                   # Precision Rupee Shield Emblem
+│       └── lib/                           # API client, SSE hooks, formatting utilities
+│
+├── services/
+│   └── api/                               # FastAPI Protocol Layer
+│       └── app/
+│           ├── catalog/                   # ACP catalog feed, embeddings & search
+│           ├── mandate/                   # JWT mandate minting & budget ledger
+│           ├── policy/                    # Pure functional 8-point guardrail engine
+│           ├── payments/                  # Razorpay gateway & HMAC webhook verifier
+│           ├── intents/                   # Purchase intent state machine
+│           ├── audit/                     # Append-only hash chain & SSE broadcaster
+│           ├── agent/                     # Autonomous buyer agent runner
+│           └── mcp_server.py              # Universal Model Context Protocol tools
+│
+├── packages/
+│   └── shared-types/                      # Shared TypeScript definitions & Zod schemas
+│
+├── seed/
+│   ├── products.json                      # 33-product merchant catalog
+│   └── scenarios.json                     # Pre-configured edge case scenarios
+│
+└── README.md
+```
+
+---
+
+## Quickstart Guide
+
+### Prerequisites
+- **Python**: 3.12+
+- **Node.js**: 20.0+
+- **Package Manager**: npm or pnpm
+
+> **Zero Keys Needed**: Out of the box, AgentMandi runs end-to-end on its built-in payment simulator and deterministic planner without requiring third-party API keys.
+
+### 1. Clone & Setup Backend
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/demo/mandate -H "Content-Type: application/json" -d "{}"
+# Clone the repository
+git clone https://github.com/Ankit-Basu/AgentMandi.git
+cd AgentMandi
+
+# Create and activate virtual environment
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r services/api/requirements-dev.txt
+
+# Start the FastAPI server
+cd services/api
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Then ask your agent: *"Using the agentmandi tools, buy me a wireless mouse under ₹1,500."*
-It will discover, price, ask permission, and pay — and it will be refused if it strays outside
-what the mandate allows.
+The API will boot at `http://127.0.0.1:8000`, automatically initialize SQLite, and ingest the 33-product catalog. Interactive Swagger docs are available at `http://127.0.0.1:8000/docs`.
 
----
+### 2. Setup Frontend & Control Room
 
-## The guardrail engine
-
-`evaluate(context) -> Decision` is a **pure function**: no database, no network. That is what
-makes each check unit-testable in isolation and makes any decision reproducible from its audit
-payload alone.
-
-| # | Check | Fails when |
-| --- | --- | --- |
-| 1 | `mandate_valid` | Signature, issuer, expiry or revocation fails |
-| 2 | `merchant_match` | The mandate names a different merchant |
-| 3 | `product_exists` | Unknown product, bad quantity, or **the amount does not match the catalog price** |
-| 4 | `category_allowed` | Category is outside the mandate's allow-list |
-| 5 | `per_txn_cap` | This purchase exceeds the per-transaction cap |
-| 6 | `budget_remaining` | It exceeds budget minus spend minus in-flight holds |
-| 7 | `stock_available` | The merchant cannot actually fulfil it |
-| 8 | `high_value_gate` | ≥ the threshold → `gate_for_human`, **not** a denial |
-
-Checks run in order; the first failure denies and the rest are recorded as `skipped` rather than
-silently dropped, so the trail shows exactly how far evaluation got and why it stopped.
-
-Two design points worth pausing on:
-
-- **Check 3 refuses an agent-supplied price.** The merchant prices the order, never the buyer.
-- **The mandate token is *scope*, never *state*.** Caps and categories are signed into it; how
-  much has been spent lives server-side only. A holder who edits their own "remaining budget"
-  changes nothing.
-
-### Reserve → settle | release
-
-Budget is **held** the moment an intent is approved or gated, and converted to spend only by a
-signature-verified webhook. A failed payment *releases* the hold. This is why the declined-card
-scenario can prove the budget was never consumed, and why two agents racing for the last rupee
-cannot both win — the availability test lives in the SQL `WHERE` clause.
-
----
-
-## Payments
-
-Razorpay **test mode only**. `config.Settings` refuses any key that does not start with
-`rzp_test_`, so this cannot be pointed at real money.
-
-With no keys configured, a local simulator mints Razorpay-shaped identifiers, serves a checkout
-page at `/payments/simulator/{link_id}`, and **signs its webhooks with the same HMAC-SHA256
-scheme Razorpay uses**. The verification path is genuinely exercised either way — the code that
-consumes a webhook does not know which gateway produced it, and cannot be told to skip the check.
-
-To use real Razorpay test mode, set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
-`RAZORPAY_WEBHOOK_SECRET`; the simulator disables itself automatically. Expose the webhook
-endpoint (e.g. `ngrok http 8000` → point the Razorpay webhook at `/payments/webhook`) and
-subscribe to `payment_link.paid`, `payment.captured`, `payment.failed` and `order.paid`.
-
-An intent becomes `PAID` **only** inside the webhook handler, after HMAC-SHA256 over the raw
-body matches `X-Razorpay-Signature`. A client claiming "I paid, honest" gets a rejected-webhook
-audit row and nothing else.
-
----
-
-## Tests
+In a new terminal:
 
 ```bash
-cd services/api && python -m pytest
+cd AgentMandi
+
+# Install dependencies
+npm install
+
+# Start the Next.js development server
+npm run dev
 ```
 
-103 tests: every guardrail check in isolation, mandate signing and four flavours of tamper
-rejection, budget reserve/settle/release including a concurrency race, webhook signature
-verification, audit-chain tamper evidence, and the agent's recovery behaviour.
+Open your browser:
+- **Landing Page Walkthrough**: [http://localhost:3000](http://localhost:3000)
+- **Live Control Room Dashboard**: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+- **Holographic Authentication Gateway**: [http://localhost:3000/login](http://localhost:3000/login)
 
 ---
 
-## Layout
+## Environment Configuration
 
-```
-apps/web/app/page.tsx     Landing page — GSAP scroll-driven walkthrough of the system
-apps/web/app/dashboard/   Control room — live audit stream, HITL gate, budget meters
-packages/shared-types/    zod mirrors of the Pydantic models
-seed/products.json        33 deterministic products across 4 categories
-seed/scenarios.json       7 demo scenarios: narrative, expectations, what to watch for
-services/api/app/
-  catalog/                ingest, embeddings, hybrid BM25 + vector search
-  mandate/                signed JWT mandates + budget accounting
-  policy/engine.py        the guardrail engine
-  payments/               Razorpay gateway, simulator, webhook settlement
-  intents/                the only route from "agent wants to buy" to "money moves"
-  audit/                  hash-chained log + SSE broadcaster
-  agent/                  buyer agent + provider-agnostic LLM wrapper
-  mcp_server.py           MCP tools for any external agent
+Create a `.env` file in the root directory (see [`.env.example`](.env.example)):
+
+```bash
+# Security (Change in production)
+MANDATE_JWT_SECRET=agentmandi_super_secret_signing_key_2026
+
+# Human-in-the-Loop Threshold (in Paise: 500000 = ₹5,000.00)
+HITL_THRESHOLD_PAISE=500000
+
+# Razorpay Testnet (Optional — leave blank to use built-in simulator)
+RAZORPAY_KEY_ID=rzp_test_YourKeyIdHere
+RAZORPAY_KEY_SECRET=YourKeySecretHere
+RAZORPAY_WEBHOOK_SECRET=YourWebhookSecretHere
+
+# LLM Providers (Optional — defaults to deterministic offline planner)
+LLM_PROVIDER=auto
+GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key
+
+# Embeddings Engine (hashing = zero-dependency offline; sentence-transformers = dense vectors)
+EMBEDDINGS_BACKEND=hashing
 ```
 
 ---
 
-## Configuration
+## Automated Test Suite
 
-Every value has a working default; see [`.env.example`](.env.example). The ones that matter:
+AgentMandi includes a comprehensive test suite covering all guardrails, signature verification, mandate tampering, budget concurrency, and recovery behaviors.
 
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `MANDATE_JWT_SECRET` | dev default | **Change it.** Anyone holding it can mint spending authority. `/health` warns while it is unset. |
-| `HITL_THRESHOLD_PAISE` | `500000` | ₹5,000. Purchases at or above this are held for a human. |
-| `RAZORPAY_KEY_ID` / `_SECRET` | empty | Empty → simulator. Must be `rzp_test_*`. |
-| `LLM_PROVIDER` | `auto` | First provider with a key, else a deterministic planner. |
-| `GEMINI_API_KEY` / `GROQ_API_KEY` | empty | Free tiers. Either one drives the agent's product choice. |
-| `EMBEDDINGS_BACKEND` | `hashing` | Deterministic and dependency-free. `sentence-transformers` swaps in dense vectors. |
+```bash
+cd services/api
+python -m pytest -v
+```
 
-### Two deliberate substitutions
-
-Both keep the demo reproducible on any machine with no network and no keys, and both are one
-environment variable away from the "real" thing:
-
-- **SQLite instead of hosted Postgres + pgvector.** No cold start, no network, and the schema is
-  plain readable SQL. Vectors are stored as blobs and searched by cosine similarity in numpy;
-  on a 33-item catalog this is indistinguishable in behaviour and considerably easier to audit.
-- **A deterministic hashing embedder instead of `sentence-transformers`.** No 2 GB torch
-  download, identical vectors on every machine. Retrieval is hybrid either way — BM25 carries
-  most of the signal at this catalog size, and dense vectors mainly help with paraphrase.
-  `EMBEDDINGS_BACKEND=sentence-transformers` switches to `all-MiniLM-L6-v2` with no other change.
-
-Search quality is not hand-waved: `buy a wireless mouse under 1500` parses the ceiling into a
-hard filter and ranks the right mouse first; `something to raise my laptop` finds the laptop
-stand. A small domain lexicon widens buyer phrasing ("earbuds" → "earphones") and is applied to
-queries only, never to stored product text, so it cannot invent a product that does not exist.
+### What the test suite validates:
+- **100% Policy Gauntlet Coverage**: Individual isolation tests for every check (#1 through #8).
+- **Mandate Tamper Resistance**: Verification failures across altered payloads, modified caps, expired timestamps, and invalid HMAC signatures.
+- **Concurrency & Double Spend Defense**: Multiple parallel intents racing for the last rupee of budget allocation.
+- **HMAC Webhook Verification**: Signature matching over raw request bytes and rejection of forged settlement signals.
+- **Cryptographic Hash Chain Integrity**: Sequential hash verification and broken sequence detection.
 
 ---
 
-## What this is not
+## Protocol Distinctions
 
-- **Not crypto rails.** No x402, no MPP. The conventions borrowed are ACP's agent-readable feed
-  and checkout intent, and AP2's signed mandate encoding scope, caps and expiry.
-- **Not NPCI's Unified Agent Protocol.** UAP is not live. Its *pattern* — one-time human consent
-  plus per-merchant spending limits, so an agent transacts without a PIN or OTP each time — is
-  implemented here as our own signed mandate, with no dependency on the unreleased protocol.
-- **Not handling real money.** Test mode only, enforced in config.
+- **Not a Conversational Wrapper**: Unlike chat assistants that simply fill out web forms on a merchant's UI, AgentMandi gives outside software agents direct machine-readable access with deterministic budget constraints.
+- **Not Cryptocurrency Rails**: AgentMandi settles in sovereign fiat currency (INR / Paise) via standard banking rails (Razorpay / UPI / Cards), avoiding the volatility and friction of crypto rails.
+- **Inspired by Open Standards**: Incorporates agent-readable catalog feeds inspired by the **Agentic Commerce Protocol (ACP)** and verifiable human authorizations inspired by **AP2 (Agent Permission Protocol)**.
+
+---
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.

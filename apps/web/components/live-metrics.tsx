@@ -39,11 +39,12 @@ type PolicyCheckRow = { id: string; status: string; reason: string };
  * window rather than all of history, which is why the strip says so.
  */
 export function LiveMetrics({
-  events,
-  connection,
+  events = [],
+  connection = "closed",
 }: {
-  events: AuditEvent[];
-  connection: Connection;
+  events?: AuditEvent[];
+  connection?: Connection;
+  refreshKey?: number;
 }) {
   // Advances the activity window even when nothing new arrives, so a quiet
   // minute visibly decays instead of freezing on the last spike.
@@ -53,7 +54,8 @@ export function LiveMetrics({
     return () => clearInterval(timer);
   }, []);
 
-  const m = useMemo(() => summarise(events, now), [events, now]);
+  const safeEvents = Array.isArray(events) ? events : [];
+  const m = useMemo(() => summarise(safeEvents, now), [safeEvents, now]);
 
   return (
     <div className="grid shrink-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
@@ -233,7 +235,7 @@ function Legend({ tone, label, count }: { tone: Tone; label: string; count: numb
 
 /* ------------------------------------------------------------- derivation --- */
 
-function summarise(events: AuditEvent[], now: number) {
+function summarise(events: AuditEvent[] = [], now: number) {
   let settledPaise = 0;
   let paidCount = 0;
   let approve = 0;

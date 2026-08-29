@@ -35,9 +35,9 @@ export function MoltenBackground({
     >
       {shader && (
       <MoltenMetal
-        color1="#5227FF"
-        color2="#FF9FFC"
-        color3="#FFFFFF"
+        color1="#ffb77b"
+        color2="#b16d2e"
+        color3="#ffd0a8"
         speed={speed}
         scale={scale}
         detail={3}
@@ -53,7 +53,7 @@ export function MoltenBackground({
         mouseInteraction
         mouseStrength={mouseStrength}
         opacity={opacity}
-        backgroundColor="#05070f"
+        backgroundColor="#0e0e0f"
       />
       )}
       {/* Subtle vignette / gradient overlay to ensure perfect contrast for text */}

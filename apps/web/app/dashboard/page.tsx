@@ -144,17 +144,18 @@ export default function Dashboard() {
       .catch(() => setOffline(true));
   }, [refreshKey]);
 
-  async function reset() {
+  const reset = useCallback(async () => {
+    if (resetting) return;
     setResetting(true);
     try {
       await resetDemo();
       bump();
-    } catch {
-      setOffline(true);
     } finally {
       setResetting(false);
     }
-  }
+  }, [bump, resetting]);
+
+  const meta = VIEW_META[view];
 
   const groups = useMemo<NavGroup[]>(
     () => [
@@ -195,85 +196,75 @@ export default function Dashboard() {
     [counts, events.length],
   );
 
-  /*
-   * Panels get explicit heights instead of being squeezed into the viewport.
-   * The page scrolls now — the old fixed `h-dvh` grid is exactly what made
-   * everything compress until it read as congested, because there was nowhere
-   * for the spacing to go.
-   */
   const panes: Record<ViewId, ReactNode> = {
     overview: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-4">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[27rem]" />
-          <ScenarioRunner onActivity={bump} className="h-[30rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-7">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} />
+          <IntentsPanel refreshKey={refreshKey} />
+          <ScenarioRunner onActivity={bump} />
         </div>
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-4">
-          <IntentsPanel refreshKey={refreshKey} className="h-[30rem]" />
-          <MandatesPanel refreshKey={refreshKey} className="h-[27rem]" />
-        </div>
-        <div className="flex min-w-0 xl:col-span-4">
-          <AuditFeed events={events} connection={connection} className="h-[59rem]" />
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
+          <MandatesPanel refreshKey={refreshKey} />
+          <AuditFeed events={events} connection={connection} />
         </div>
       </div>
     ),
     agent: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 xl:col-span-7">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[40rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-7">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="min-h-[40rem]" />
         </div>
-        <div className="flex min-w-0 xl:col-span-5">
-          <MandatesPanel refreshKey={refreshKey} className="h-[40rem]" />
+        <div className="flex min-w-0 lg:col-span-5">
+          <MandatesPanel refreshKey={refreshKey} className="min-h-[40rem]" />
         </div>
       </div>
     ),
     intents: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 xl:col-span-8">
-          <IntentsPanel refreshKey={refreshKey} className="h-[44rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-7">
+          <IntentsPanel refreshKey={refreshKey} className="min-h-[44rem]" />
         </div>
-        <div className="flex min-w-0 xl:col-span-4">
-          <AuditFeed events={events} connection={connection} className="h-[44rem]" />
+        <div className="flex min-w-0 lg:col-span-5">
+          <AuditFeed events={events} connection={connection} className="min-h-[44rem]" />
         </div>
       </div>
     ),
     mandates: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 xl:col-span-7">
-          <MandatesPanel refreshKey={refreshKey} className="h-[40rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-7">
+          <MandatesPanel refreshKey={refreshKey} className="min-h-[40rem]" />
         </div>
-        <div className="flex min-w-0 xl:col-span-5">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[40rem]" />
+        <div className="flex min-w-0 lg:col-span-5">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="min-h-[40rem]" />
         </div>
       </div>
     ),
     audit: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 xl:col-span-8">
-          <AuditFeed events={events} connection={connection} className="h-[46rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-8">
+          <AuditFeed events={events} connection={connection} className="min-h-[46rem]" />
         </div>
-        <div className="flex min-w-0 xl:col-span-4">
-          <IntentsPanel refreshKey={refreshKey} className="h-[46rem]" />
+        <div className="flex min-w-0 lg:col-span-4">
+          <IntentsPanel refreshKey={refreshKey} className="min-h-[46rem]" />
         </div>
       </div>
     ),
     scenarios: (
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="flex min-w-0 xl:col-span-7">
-          <ScenarioRunner onActivity={bump} className="h-[44rem]" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-7">
+          <ScenarioRunner onActivity={bump} className="min-h-[44rem]" />
         </div>
-        <div className="flex min-w-0 xl:col-span-5">
-          <AuditFeed events={events} connection={connection} className="h-[44rem]" />
+        <div className="flex min-w-0 lg:col-span-5">
+          <AuditFeed events={events} connection={connection} className="min-h-[44rem]" />
         </div>
       </div>
     ),
   };
 
-  const meta = VIEW_META[view];
-
   return (
-    <div className="relative min-h-dvh p-4 lg:flex lg:gap-6 lg:p-6">
-      <MoltenBackground opacity={0.55} speed={0.18} scale={5} />
+    <div className="relative min-h-dvh p-4 lg:flex lg:gap-6 lg:p-6 bg-[#0e0e0f] text-[#e5e2e3]">
+      <MoltenBackground opacity={0.4} speed={0.15} scale={5} />
 
       {/* The rail holds still while the page scrolls past it. */}
       <div className="mb-4 lg:sticky lg:top-6 lg:mb-0 lg:h-[calc(100dvh-3rem)]">
@@ -290,16 +281,10 @@ export default function Dashboard() {
       </div>
 
       <main className="min-w-0 flex-1">
-        {/*
-         * The title and the run configuration share one surface. Kept apart,
-         * the heading floated as bare text in a transparent band and about
-         * 170px of the page read as empty — the gap was not spacing, it was a
-         * region with nothing to sit on.
-         */}
-        <header className="glass-surface glass-d2 rounded-2xl border border-white/[0.08] px-6 py-5 shadow-lg backdrop-blur-xl">
+        <header className="rounded-2xl border border-[#ffb77b]/20 bg-[#141416]/90 px-6 py-5 shadow-xl backdrop-blur-xl transition-all">
           <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-5">
             <div className="min-w-0">
-              <p className="flex items-center gap-2 text-[11px] font-medium tracking-[0.18em] text-mute-500 uppercase">
+              <p className="flex items-center gap-2 font-mono text-[11px] font-medium tracking-[0.2em] text-[#ffb77b] uppercase">
                 <Today />
                 <span aria-hidden>·</span>
                 <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
@@ -312,21 +297,13 @@ export default function Dashboard() {
                   {offline ? "API unreachable" : connection === "live" ? "streaming" : connection}
                 </span>
               </p>
-              <h1 className="mt-2.5 text-[clamp(1.75rem,2.8vw,2.35rem)] leading-[1.08] font-semibold tracking-[-0.03em] text-mute-100">
+              <h1 className="font-serif mt-2.5 text-[clamp(2rem,3.2vw,2.6rem)] leading-[1.02] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
                 {meta.title}{" "}
-                <span
-                  style={{
-                    background:
-                      "linear-gradient(100deg, var(--color-brand-400), var(--color-violet-400))",
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
+                <span className="bg-gradient-to-r from-[#ffd0a8] via-[#ffb77b] to-[#b16d2e] bg-clip-text text-transparent">
                   {meta.accent}
                 </span>
               </h1>
-              <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-mute-400">
+              <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed text-[#c7b0a6]">
                 {meta.blurb}
               </p>
             </div>

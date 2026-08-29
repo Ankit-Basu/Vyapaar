@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
-
-import { THEME_INIT_SCRIPT } from "@/components/glass/theme";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader, Space_Grotesk } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -14,6 +11,19 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
 });
 
 /*
@@ -40,22 +50,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${clashDisplay.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${clashDisplay.variable} ${newsreader.variable} ${spaceGrotesk.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        {/*
-          Applies the saved palette before any Next.js module runs, so a visitor
-          who picked one never sees the default flash first.
-
-          It sits inside <body> rather than beside it because `<script>` is not a
-          legal child of `<html>` — placing it there produced a hydration error.
-          Next hoists every `beforeInteractive` script into <head> regardless of
-          where it is written, so the position here costs nothing.
-        */}
-        <Script id="agentmandi-theme" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
         {children}
       </body>
     </html>

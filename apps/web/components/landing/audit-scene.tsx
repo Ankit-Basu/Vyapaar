@@ -1,179 +1,227 @@
 "use client";
 
-import { AlertTriangle, Link2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { Check, Link2, ShieldAlert, ShieldCheck, RefreshCw } from "lucide-react";
 import { useRef } from "react";
+import { Eyebrow, gsap, useScene } from "@/components/landing/motion";
 
-import { EASE, Eyebrow, gsap, useScene } from "@/components/landing/motion";
-
-/** Five representative rows from a real run, in the order they were appended. */
 const BLOCKS = [
-  { seq: 1, label: "mandate.issued", hash: "2cc1119c", amount: "₹10,000 budget" },
-  { seq: 2, label: "intent.created", hash: "8f4a0d31", amount: "₹1,299.00" },
-  { seq: 3, label: "policy.decision", hash: "b1e77c92", amount: "auto_approve" },
-  { seq: 4, label: "payment.initiated", hash: "5d2ac408", amount: "order_92m3zV" },
-  { seq: 5, label: "intent.paid", hash: "067b1aff", amount: "₹1,299.00" },
+  { seq: 1, label: "mandate.issued", amount: "₹10,000 cap", hash: "9f3ac21b" },
+  { seq: 2, label: "intent.created", amount: "₹1,299.00", hash: "0b12de99" },
+  { seq: 3, label: "policy.decision", amount: "auto_approve", hash: "5c8e1a2b" },
+  { seq: 4, label: "payment.initiated", amount: "order_9f3a", hash: "e41bb093" },
+  { seq: 5, label: "intent.paid", amount: "settled", hash: "7cc2a410" },
 ] as const;
 
 export function AuditScene() {
   const scope = useRef<HTMLElement>(null);
+  const [tampered, setTampered] = useState(false);
 
   useScene(scope, {
     motion: () => {
-      gsap.set(".ac-block", { opacity: 0, y: 26, scale: 0.94 });
-      gsap.set(".ac-link", { scaleX: 0 });
-      gsap.set([".ac-verdict-ok", ".ac-verdict-bad"], { opacity: 0, y: 10 });
-      gsap.set(".ac-tamper-badge", { opacity: 0, scale: 0.8 });
+      const blocks = gsap.utils.toArray<HTMLElement>(".ac-block-item");
+      const links = gsap.utils.toArray<HTMLElement>(".ac-link-bar");
 
-      const timeline = gsap.timeline({
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: scope.current,
           start: "top top",
-          end: "+=2400",
-          pin: ".ac-stage",
-          scrub: 0.7,
+          end: "+=180%",
+          pin: true,
+          scrub: 0.6,
           anticipatePin: 1,
         },
       });
 
-      // Phase 1 — the chain is written, block by block, each linked to the last.
-      BLOCKS.forEach((_, index) => {
-        const at = index * 0.8;
-        timeline.to(
-          `.ac-block-${index}`,
-          { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: EASE },
+      // Sequential block-by-block hash linking on mouse scroll
+      blocks.forEach((block, i) => {
+        const at = i * 0.35;
+        tl.to(
+          block,
+          {
+            opacity: 1,
+            scale: 1,
+            borderColor: "rgba(255,183,123,0.3)",
+            backgroundColor: "rgba(20,20,22,0.95)",
+            duration: 0.3,
+            ease: "power2.out",
+          },
           at,
         );
-        if (index > 0) {
-          timeline.to(`.ac-link-${index - 1}`, { scaleX: 1, duration: 0.4 }, at - 0.2);
+
+        if (i < links.length) {
+          tl.to(
+            links[i],
+            {
+              scaleX: 1,
+              duration: 0.25,
+              ease: "power1.inOut",
+            },
+            at + 0.15,
+          );
         }
       });
 
-      timeline.to(".ac-verdict-ok", { opacity: 1, y: 0, duration: 0.5 }, 4.2);
-
-      // Phase 2 — someone edits a historical row behind the application's back.
-      // The gap between the clean verdict and this is deliberate: the reader
-      // needs a beat to register "valid: true" before it is taken away.
-      const tamperAt = 6.4;
-      timeline
-        .to(".ac-verdict-ok", { opacity: 0, y: -8, duration: 0.3 }, tamperAt)
-        .to(
-          ".ac-block-2",
-          {
-            borderColor: "rgba(255,107,120,0.55)",
-            backgroundColor: "rgba(255,107,120,0.09)",
-            duration: 0.4,
-          },
-          tamperAt,
-        )
-        .to(".ac-tamper-badge", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, tamperAt + 0.15)
-        .to(".ac-amount-2", { opacity: 0, duration: 0.2 }, tamperAt + 0.15)
-        .set(".ac-amount-2", { textContent: "₹49,900.00", color: "#ff6b78" }, tamperAt + 0.35)
-        .to(".ac-amount-2", { opacity: 1, duration: 0.25 }, tamperAt + 0.35)
-        // Every link after the edited row is now broken: its stored hash no
-        // longer matches what the content actually hashes to.
-        .to(
-          [".ac-link-2", ".ac-link-3"],
-          { backgroundColor: "#ff6b78", duration: 0.35, stagger: 0.12 },
-          tamperAt + 0.6,
-        )
-        .to(
-          [".ac-block-3", ".ac-block-4"],
-          { opacity: 0.45, duration: 0.35, stagger: 0.1 },
-          tamperAt + 0.7,
-        )
-        .to(".ac-verdict-bad", { opacity: 1, y: 0, duration: 0.5 }, tamperAt + 1);
+      // Verdict reveal at end of scroll
+      tl.fromTo(
+        ".ac-verdict-banner",
+        { opacity: 0, y: 15, scale: 0.96 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "back.out(1.7)" },
+        "+=0.1",
+      );
     },
-
     still: () => {
-      gsap.set(".ac-block", { opacity: 1, y: 0, scale: 1 });
-      gsap.set(".ac-link", { scaleX: 1 });
-      gsap.set(".ac-verdict-ok", { opacity: 1, y: 0 });
-      gsap.set(".ac-verdict-bad", { opacity: 0 });
-      gsap.set(".ac-tamper-badge", { opacity: 0 });
+      gsap.set(".ac-block-item", { opacity: 1, scale: 1 });
+      gsap.set(".ac-link-bar", { scaleX: 1 });
+      gsap.set(".ac-verdict-banner", { opacity: 1, y: 0, scale: 1 });
     },
   });
 
   return (
-    <section ref={scope} id="audit" className="relative">
-      <div className="ac-stage flex min-h-dvh items-center py-20">
-        <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
+    <section ref={scope} id="audit" className="relative bg-[#131314] text-[#e5e2e3]">
+      <div className="flex min-h-dvh items-center py-20">
+        <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
           <div className="mx-auto max-w-2xl text-center">
             <div className="flex justify-center">
               <Eyebrow index="05">The audit trail</Eyebrow>
             </div>
-            <h2 className="mt-5 text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+            <h2 className="font-serif mt-5 text-[clamp(2.2rem,4vw,3.3rem)] leading-[0.95] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
               Every decision is written down.
               <br />
-              <span className="text-gradient">Editing one breaks all of them.</span>
+              <span className="bg-gradient-to-r from-[#ffd0a8] via-[#ffb77b] to-[#b16d2e] bg-clip-text text-transparent">
+                Editing one breaks all of them.
+              </span>
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-[14px] leading-relaxed text-mute-400">
-              Each row hashes its own contents together with the hash before it. The log is
-              append-only in SQLite itself — <code className="font-mono text-[13px] text-brand-300">UPDATE</code>{" "}
-              and <code className="font-mono text-[13px] text-brand-300">DELETE</code> are blocked
-              by triggers, not by convention.
+            <p className="mx-auto mt-5 max-w-xl text-[14px] leading-relaxed text-[#c7b0a6]">
+              Each row hashes its own contents together with the hash before it. Scroll to witness the cryptographic chain construct sequentially.
+              The log is append-only in SQLite itself — <code className="font-mono text-[13px] text-[#ffb77b]">UPDATE</code>{" "}
+              and <code className="font-mono text-[13px] text-[#ffb77b]">DELETE</code> are blocked by triggers.
             </p>
+
+            {/* Interactive Simulation Toggle */}
+            <div className="mt-8 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setTampered((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#ffb77b]/40 bg-[#ffb77b]/[0.1] px-5 py-2.5 font-mono text-[11px] font-bold text-[#ffb77b] uppercase tracking-wider transition hover:bg-[#ffb77b]/20 hover:border-[#ffb77b] shadow-lg cursor-pointer"
+              >
+                <RefreshCw size={13} className={tampered ? "animate-spin" : ""} />
+                {tampered ? "RESTORE ORIGINAL VALID CHAIN" : "SIMULATE DATABASE TAMPER ON BLOCK #3"}
+              </button>
+            </div>
           </div>
 
-          {/* The chain */}
-          <div className="mt-14 flex flex-col items-stretch gap-0 md:flex-row md:items-center">
-            {BLOCKS.map((block, index) => (
-              <div key={block.seq} className="contents">
-                <div
-                  className={`ac-block ac-block-${index} glass-flat relative flex-1 rounded-xl px-3.5 py-3`}
-                >
-                  {index === 2 && (
-                    <span className="ac-tamper-badge absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-fail-500 px-2 py-0.5 text-[10px] font-bold tracking-wider text-ink-950 uppercase whitespace-nowrap">
-                      edited
-                    </span>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[10px] text-mute-500">#{block.seq}</span>
-                    <Link2 size={9} className="text-mute-500" />
-                  </div>
-                  <div className="mt-1 truncate text-[12px] font-medium text-mute-200">
-                    {block.label}
-                  </div>
+          {/* The chain with scroll-scrubbed reveal */}
+          <div className="mt-14 flex flex-col items-stretch gap-2 md:flex-row md:items-center">
+            {BLOCKS.map((block, index) => {
+              const isTamperedBlock = tampered && index === 2;
+              const isBrokenDownstream = tampered && index > 2;
+
+              return (
+                <div key={block.seq} className="contents">
                   <div
-                    className={`ac-amount-${index} mt-0.5 truncate font-mono text-[11px] text-mute-400`}
+                    className={`ac-block-item relative flex-1 rounded-2xl border p-4.5 backdrop-blur-md transition-all duration-500 shadow-xl opacity-35 scale-95 border-white/[0.08] bg-[#141416]/50 ${
+                      isTamperedBlock
+                        ? "!border-[#fb5b6b] !bg-[#2a1417]/95 !opacity-100 shadow-[0_0_30px_rgba(251,91,107,0.35)]"
+                        : isBrokenDownstream
+                          ? "!border-[#fb5b6b]/40 !bg-[#1c1416]/90 !opacity-100"
+                          : ""
+                    }`}
                   >
-                    {block.amount}
-                  </div>
-                  <div className="mt-2 truncate font-mono text-[10px] text-mute-500">
-                    {block.hash}…
-                  </div>
-                </div>
+                    {/* Status Badge */}
+                    {isTamperedBlock && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#fb5b6b] px-3 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[#0e0e0f] uppercase whitespace-nowrap shadow-lg animate-pulse">
+                        TAMPERED
+                      </span>
+                    )}
+                    {isBrokenDownstream && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-[#fb5b6b]/60 bg-[#fb5b6b]/20 px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-[#fb5b6b] uppercase whitespace-nowrap shadow-md">
+                        INVALIDATED
+                      </span>
+                    )}
 
-                {index < BLOCKS.length - 1 && (
-                  <div className="relative flex shrink-0 items-center justify-center py-1.5 md:px-1.5 md:py-0">
-                    <span
-                      className={`ac-link ac-link-${index} h-6 w-px origin-top bg-pass-500 md:h-px md:w-6 md:origin-left`}
-                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`font-mono text-[11px] font-bold ${
+                          isTamperedBlock || isBrokenDownstream ? "text-[#fb5b6b]" : "text-[#ffb77b]"
+                        }`}
+                      >
+                        #{block.seq}
+                      </span>
+                      <Link2
+                        size={12}
+                        className={isTamperedBlock || isBrokenDownstream ? "text-[#fb5b6b]" : "text-[#b89a8e]"}
+                      />
+                    </div>
+
+                    <div className="mt-1.5 truncate font-mono text-[12px] font-medium text-[#f5f3f0]">
+                      {block.label}
+                    </div>
+
+                    <div
+                      className={`mt-0.5 truncate font-mono text-[11px] font-semibold ${
+                        isTamperedBlock
+                          ? "text-[#fb5b6b]"
+                          : isBrokenDownstream
+                            ? "text-[#f5f3f0]/80"
+                            : "text-[#c7b0a6]"
+                      }`}
+                    >
+                      {isTamperedBlock ? "₹49,900.00 (FORGED)" : block.amount}
+                    </div>
+
+                    <div className="mt-3 truncate border-t border-white/[0.06] pt-2 font-mono text-[10px]">
+                      <span className="text-mute-500">prev: </span>
+                      {isTamperedBlock ? (
+                        <span className="text-[#fb5b6b] font-bold">5c8e1a2b (MODIFIED)</span>
+                      ) : isBrokenDownstream ? (
+                        <span className="text-[#fb5b6b] font-semibold flex items-center gap-1 inline-flex">
+                          <span className="line-through opacity-70">{block.hash}</span>
+                          <span className="text-[9px] bg-[#fb5b6b]/20 px-1 rounded">MISMATCH</span>
+                        </span>
+                      ) : (
+                        <span className="text-[#ffb77b]">{block.hash}</span>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {index < BLOCKS.length - 1 && (
+                    <div className="relative my-2 flex h-5 w-full items-center justify-center md:my-0 md:h-auto md:w-6 md:shrink-0">
+                      <div
+                        className={`ac-link-bar h-0.5 w-full origin-left scale-x-0 transition-colors duration-500 ${
+                          tampered && index >= 2
+                            ? "!bg-[#fb5b6b] !scale-x-100 shadow-[0_0_8px_#fb5b6b]"
+                            : "bg-[#ffb77b]/60"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Verdicts occupy the same slot, so one replaces the other in place. */}
-          <div className="relative mt-10 flex h-16 items-start justify-center">
-            <div className="ac-verdict-ok glass-flat absolute flex items-center gap-2.5 rounded-xl px-4 py-2.5">
-              <ShieldCheck size={15} className="text-pass-500" />
-              <span className="text-[13px] text-mute-300">
-                <span className="font-mono text-pass-500">valid: true</span> — all 5 entries chain
-                cleanly from genesis.
-              </span>
-            </div>
-            <div className="ac-verdict-bad glass-flat absolute flex max-w-lg items-start gap-2.5 rounded-xl border-fail-500/40 px-4 py-2.5">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-fail-500" />
-              <span className="text-[13px] leading-relaxed text-mute-300">
-                <span className="font-mono text-fail-500">broken_at_seq: 3</span> — row 3&rsquo;s
-                content no longer matches its stored hash, and every row after it is invalidated.
-                The trail cannot be edited quietly.
-              </span>
-            </div>
+          {/* Dynamic verdict */}
+          <div className="ac-verdict-banner mt-10 mx-auto max-w-xl opacity-0">
+            {!tampered ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-[#34d399]/30 bg-[#34d399]/[0.08] px-4 py-3 text-center transition-all">
+                <ShieldCheck size={16} className="text-[#34d399]" />
+                <span className="font-mono text-[12px] font-semibold text-[#34d399]">
+                  CHAIN INTACT · 5/5 SHA-256 HASHES CRYPTOGRAPHICALLY VERIFIED
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-[#fb5b6b]/50 bg-[#fb5b6b]/[0.15] px-5 py-3.5 text-center transition-all shadow-[0_0_20px_rgba(251,91,107,0.25)]">
+                <ShieldAlert size={18} className="text-[#fb5b6b] shrink-0 animate-bounce" />
+                <span className="font-mono text-[12px] font-bold text-[#fb5b6b]">
+                  INTEGRITY FAULT · HASH CHAIN BROKEN AT BLOCK #3 (DOWNSTREAM INVALIDATED)
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </section>
   );
 }
+export default AuditScene;

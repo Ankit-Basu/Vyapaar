@@ -18,49 +18,60 @@
  */
 
 @theme {
-  /* Ground: near-black with a cool cast, so the blue accent sits in the same family. */
-  --color-ink-950: #05070d;
-  --color-ink-900: #090d16;
-  --color-ink-850: #0d1220;
-  --color-ink-800: #111829;
-  --color-ink-700: #1a2337;
-  --color-ink-600: #253148;
-  --color-ink-500: #36455f;
+  /* Ground: Obsidian black and dark charcoal from Kinetic */
+  --color-ink-950: #0a0a0b;
+  --color-ink-900: #0e0e0f;
+  --color-ink-850: #131314;
+  --color-ink-800: #1a191b;
+  --color-ink-700: #242326;
+  --color-ink-600: #353437;
+  --color-ink-500: #4a494d;
 
-  --color-mute-500: #6b7c96;
-  --color-mute-400: #8ba0bd;
-  --color-mute-300: #b3c3da;
-  --color-mute-200: #d2dcec;
-  --color-mute-100: #edf3fb;
+  --color-mute-500: #8f8078;
+  --color-mute-400: #b89a8e;
+  --color-mute-300: #c7b0a6;
+  --color-mute-200: #dcd0ca;
+  --color-mute-100: #e5e2e3;
 
-  /* Razorpay's blue, extended into a violet for gradients. */
-  --color-brand-600: #1f6feb;
-  --color-brand-500: #3395ff;
-  --color-brand-400: #5aabff;
-  --color-brand-300: #8cc5ff;
-  --color-violet-500: #8b5cf6;
-  --color-violet-400: #a78bfa;
-  --color-brand-glow: #3395ff26;
+  /* Kinetic Warm Amber / Orange Gold */
+  --color-brand-600: #8c4610;
+  --color-brand-500: #b16d2e;
+  --color-brand-400: #ffb77b;
+  --color-brand-300: #ffd0a8;
+  --color-brand-glow: rgba(255, 183, 123, 0.22);
+  --color-violet-500: #d97706;
+  --color-violet-400: #fbbf24;
 
   --color-pass-500: #2fd48f;
   --color-pass-bg: #2fd48f1c;
-  --color-gate-500: #f5b32c;
-  --color-gate-bg: #f5b32c1c;
+  --color-gate-500: #ffb77b;
+  --color-gate-bg: #ffb77b1c;
   --color-fail-500: #ff6b78;
   --color-fail-bg: #ff6b781c;
-  --color-skip-500: #5f708a;
-  --color-skip-bg: #5f708a14;
+  --color-skip-500: #8f8078;
+  --color-skip-bg: #8f807814;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --font-sans: var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-grotesk), var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-newsreader), "Newsreader", "Playfair Display", Georgia, serif;
+  --font-display: var(--font-newsreader), var(--font-clash-display), "Newsreader", serif;
 }
 
 :root {
   color-scheme: dark;
-  --glass-bg: rgba(255, 255, 255, 0.035);
-  --glass-bg-strong: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --color-canvas: #0e0e0f;
+  --color-panel: #131314;
+  --color-heading: #f5f3f0;
+  --color-body: #e5e2e3;
+  --color-caption: #b89a8e;
+  --color-border: rgba(68, 71, 72, 0.25);
+  --glass-bg: rgba(255, 183, 123, 0.03);
+  --glass-bg-strong: rgba(255, 183, 123, 0.06);
+  --glass-border: rgba(255, 183, 123, 0.12);
+  --glass-highlight: rgba(255, 183, 123, 0.22);
+  --shader-1: #ffb77b;
+  --shader-2: #b16d2e;
+  --shader-3: #ffd0a8;
 }
 
 html {

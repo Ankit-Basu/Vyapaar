@@ -2,52 +2,54 @@
 
 import { Check, Lock, ShieldCheck } from "lucide-react";
 import { useRef } from "react";
+import { Eyebrow, gsap, useScene } from "@/components/landing/motion";
 
-import { EASE, Eyebrow, gsap, useScene } from "@/components/landing/motion";
-
-/**
- * The eight guardrails, in the order `policy/engine.py` runs them. Kept in step
- * with `ORDERED_CHECKS` on the API — the numbers here are the real ones from the
- * happy-path scenario, not invented for the page.
- */
 const CHECKS = [
   {
     id: "mandate_valid",
+    num: 1,
     name: "Mandate is signed, unexpired and on record",
     reason: "Signature, issuer and expiry verify against the merchant's own record.",
   },
   {
     id: "merchant_match",
+    num: 2,
     name: "Intent targets the merchant the mandate names",
     reason: "A mandate is not transferable between merchants.",
   },
   {
     id: "product_exists",
+    num: 3,
     name: "Product exists, and the price is the merchant's",
     reason: "₹1,299 × 1 matches the catalog. An agent cannot name its own price.",
   },
   {
     id: "category_allowed",
+    num: 4,
     name: "Category is inside the mandate allow-list",
     reason: "'electronics' was authorised by the buyer. 'fitness' would not be.",
   },
   {
     id: "per_txn_cap",
+    num: 5,
     name: "Amount is within the per-transaction cap",
     reason: "₹1,299 sits inside the ₹3,000 ceiling on any single purchase.",
   },
   {
     id: "budget_remaining",
+    num: 6,
     name: "The mandate has enough budget left",
     reason: "Budget minus spend minus money already held for in-flight purchases.",
   },
   {
     id: "stock_available",
+    num: 7,
     name: "The merchant can actually fulfil it",
     reason: "42 in stock. Charging for something unshippable is not allowed.",
   },
   {
     id: "high_value_gate",
+    num: 8,
     name: "High-value purchases need a human",
     reason: "₹1,299 is below the ₹5,000 threshold, so the agent may proceed alone.",
   },
@@ -59,157 +61,156 @@ export function GuardrailScene() {
   useScene(scope, {
     motion: () => {
       const rows = gsap.utils.toArray<HTMLElement>(".gr-row");
+      const ticks = gsap.utils.toArray<HTMLElement>(".gr-tick");
+      const badges = gsap.utils.toArray<HTMLElement>(".gr-badge");
+      const nodeRings = gsap.utils.toArray<HTMLElement>(".gr-node");
 
-      // Start every row dormant, then illuminate them one by one as the reader
-      // scrolls. The scrub ties progress to scroll position rather than to time,
-      // so the reader controls the pace and can scrub backwards.
-      gsap.set(rows, { opacity: 0.28 });
-      // Reasons keep their space and only fade: animating height would run
-      // layout on every scroll frame, eight times over, inside a pinned section.
-      gsap.set(".gr-reason", { opacity: 0, y: -4 });
-      gsap.set(".gr-tick", { scale: 0, opacity: 0 });
-      gsap.set(".gr-verdict", { opacity: 0, scale: 0.85 });
-
-      const timeline = gsap.timeline({
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: scope.current,
           start: "top top",
-          end: `+=${CHECKS.length * 190 + 520}`,
-          pin: ".gr-stage",
-          scrub: 0.75,
+          end: "+=220%",
+          pin: true,
+          scrub: 0.6,
           anticipatePin: 1,
         },
       });
 
-      rows.forEach((row, index) => {
-        const at = index * 1;
-        timeline
-          .to(row, { opacity: 1, duration: 0.35 }, at)
-          .to(row.querySelector(".gr-index"), { color: "#2fd48f", duration: 0.3 }, at)
-          .to(
-            row.querySelector(".gr-tick"),
-            { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.4)" },
-            at + 0.1,
-          )
-          .to(
-            row.querySelector(".gr-reason"),
-            { opacity: 1, y: 0, duration: 0.35 },
-            at + 0.12,
-          )
-          // The rail fills to this row's position, so the progress line tracks
-          // exactly which check is currently being evaluated.
-          .to(
-            ".gr-rail-fill",
-            { scaleY: (index + 1) / CHECKS.length, duration: 0.35, ease: "none" },
-            at,
-          );
+      // Initial card reveal
+      tl.from(".gr-card", { opacity: 0, y: 20, duration: 0.3, ease: "power2.out" })
+        .to(".gr-rail-fill", { scaleY: 1, duration: 2.4, ease: "none" }, 0.1);
 
-        // Once a check has been read, dim it slightly so the active row leads.
-        if (index > 0) {
-          timeline.to(rows[index - 1], { opacity: 0.55, duration: 0.3 }, at);
-        }
+      // Light up each check one by one on mouse scroll
+      rows.forEach((row, i) => {
+        const at = 0.2 + i * 0.28;
+        tl.to(
+          row,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.25,
+            ease: "power2.out",
+          },
+          at,
+        )
+          .to(
+            nodeRings[i],
+            {
+              borderColor: "rgba(52,211,153,0.8)",
+              backgroundColor: "rgba(52,211,153,0.12)",
+              duration: 0.2,
+            },
+            at,
+          )
+          .to(badges[i], { opacity: 0, scale: 0.6, duration: 0.12 }, at)
+          .to(ticks[i], { opacity: 1, scale: 1, duration: 0.2, ease: "back.out(2)" }, at + 0.08);
       });
 
-      timeline
-        .to(rows, { opacity: 1, duration: 0.4 }, CHECKS.length)
-        .to(
-          ".gr-verdict",
-          { opacity: 1, scale: 1, duration: 0.7, ease: EASE },
-          CHECKS.length + 0.1,
-        )
-        .to(".gr-card", { borderColor: "rgba(47,212,143,0.4)", duration: 0.5 }, CHECKS.length + 0.1);
+      // Final verdict auto-approve reveal
+      tl.fromTo(
+        ".gr-verdict",
+        { opacity: 0, y: 15, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "back.out(1.7)" },
+        "+=0.1",
+      );
     },
-
     still: () => {
-      // No pinning, no scrub: show the finished evaluation.
-      gsap.set(".gr-row", { opacity: 1 });
-      gsap.set(".gr-reason", { opacity: 1, y: 0 });
-      gsap.set(".gr-tick", { scale: 1, opacity: 1 });
-      gsap.set(".gr-index", { color: "#2fd48f" });
+      gsap.set(".gr-row", { opacity: 1, x: 0 });
+      gsap.set(".gr-tick", { opacity: 1, scale: 1 });
+      gsap.set(".gr-badge", { opacity: 0 });
       gsap.set(".gr-rail-fill", { scaleY: 1 });
+      gsap.set(".gr-card", { opacity: 1, y: 0 });
       gsap.set(".gr-verdict", { opacity: 1, scale: 1 });
     },
   });
 
   return (
-    <section ref={scope} id="guardrails" className="relative">
-      <div className="gr-stage flex min-h-dvh items-center py-12">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+    <section ref={scope} id="guardrails" className="relative bg-[#131314] text-[#e5e2e3]">
+      <div className="flex min-h-dvh items-center py-16">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 sm:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16 lg:items-start">
           {/* Left: what is being decided */}
-          <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="lg:sticky lg:top-24">
             <Eyebrow index="03">The guardrail engine</Eyebrow>
-            <h2 className="mt-5 text-[clamp(1.9rem,3.6vw,2.9rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
+            <h2 className="font-serif mt-5 text-[clamp(2.2rem,4vw,3.3rem)] leading-[0.95] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
               Eight checks stand between
               <br />
-              <span className="text-gradient">an agent and your money.</span>
+              <span className="bg-gradient-to-r from-[#ffd0a8] via-[#ffb77b] to-[#b16d2e] bg-clip-text text-transparent">
+                an agent and your money.
+              </span>
             </h2>
-            <p className="mt-5 max-w-md text-[14px] leading-relaxed text-mute-400">
-              Every purchase intent runs the same ordered gauntlet. The first failure denies it,
-              and the remaining checks are recorded as skipped rather than quietly dropped — so
-              the trail shows exactly how far evaluation got, and why it stopped.
+            <p className="mt-5 max-w-md text-[14px] leading-relaxed text-[#c7b0a6]">
+              Every purchase intent runs the same ordered gauntlet. Scroll to trace each check in real time.
+              The first failure denies it, and the remaining checks are recorded as skipped so the trail shows exactly why it stopped.
             </p>
 
-            <div className="gr-card glass-flat-strong mt-8 rounded-2xl p-4">
+            <div className="gr-card mt-8 rounded-2xl border border-[#ffb77b]/25 bg-[#141416]/95 p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.6)] backdrop-blur-md">
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 font-mono text-[11px] text-mute-500">
-                  <Lock size={11} />
-                  purchase intent
+                <span className="flex items-center gap-1.5 font-mono text-[11px] text-[#b89a8e]">
+                  <Lock size={12} className="text-[#ffb77b]" />
+                  PURCHASE INTENT
                 </span>
-                <span className="gr-verdict rounded-md bg-pass-bg px-2 py-0.5 text-[10px] font-bold tracking-wider text-pass-500 uppercase">
+                <span className="rounded-md bg-[#34d399]/15 border border-[#34d399]/30 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[#34d399] uppercase">
                   auto_approve
                 </span>
               </div>
-              <div className="mt-3 flex items-baseline justify-between gap-3">
-                <span className="text-[13px] font-medium text-mute-100">
+              <div className="mt-3.5 flex items-baseline justify-between gap-3 border-t border-white/[0.05] pt-3">
+                <span className="text-[14px] font-medium text-[#f5f3f0]">
                   Aurora Wireless Optical Mouse
                 </span>
-                <span className="font-mono text-[16px] font-semibold tabular-nums">
+                <span className="font-mono text-[16px] font-semibold text-[#ffb77b] tabular-nums">
                   ₹1,299.00
                 </span>
               </div>
-              <p className="mt-2.5 text-[11px] leading-relaxed text-mute-500">
+              <p className="mt-2.5 text-[11px] leading-relaxed text-[#b89a8e]">
                 Raised by the buyer agent under a mandate capped at ₹3,000 per purchase, inside a
-                ₹10,000 budget, limited to electronics and office.
+                ₹10,000 budget, limited to electronics.
               </p>
             </div>
           </div>
 
-          {/* Right: the checks running */}
-          <div className="relative">
-            {/* Rail: a track with a fill that tracks evaluation progress. */}
-            <div className="absolute top-2 bottom-2 left-[13px] w-px bg-white/10" />
-            <div className="gr-rail-fill absolute top-2 bottom-2 left-[13px] w-px origin-top scale-y-0 bg-gradient-to-b from-pass-500 via-pass-500 to-brand-400" />
+          {/* Right: clean timeline without odd box containers */}
+          <div className="relative pl-2">
+            {/* Rail track & progressive fill */}
+            <div className="absolute top-4 bottom-4 left-[14px] w-px bg-white/10" />
+            <div className="gr-rail-fill absolute top-4 bottom-4 left-[14px] w-px origin-top scale-y-0 bg-gradient-to-b from-[#34d399] via-[#ffb77b] to-[#b16d2e]" />
 
-            <ol className="space-y-2.5">
-              {CHECKS.map((check, index) => (
-                <li key={check.id} className="gr-row relative flex gap-4 pl-0">
-                  <span className="relative z-10 grid size-[27px] shrink-0 place-items-center rounded-full border border-white/10 bg-ink-900">
-                    <span className="gr-tick absolute inset-0 grid place-items-center rounded-full bg-pass-bg">
-                      <Check size={12} className="text-pass-500" strokeWidth={3.5} />
+            <ol className="space-y-4">
+              {CHECKS.map((check) => (
+                <li
+                  key={check.id}
+                  className="gr-row relative flex items-start gap-4 pl-0 opacity-35 translate-x-2 transition-all"
+                >
+                  {/* Step node */}
+                  <span className="gr-node relative z-10 mt-0.5 grid size-[28px] shrink-0 place-items-center rounded-full border border-white/20 bg-[#141416] shadow-md transition-colors">
+                    <span className="gr-badge font-mono text-[10px] font-bold text-[#b89a8e]">
+                      {check.num}
                     </span>
-                    <span className="gr-index font-mono text-[11px] font-semibold text-mute-500">
-                      {index + 1}
+                    <span className="gr-tick absolute grid place-items-center rounded-full text-[#34d399] opacity-0 scale-50">
+                      <Check size={14} strokeWidth={3.5} />
                     </span>
                   </span>
 
+                  {/* Clean text hierarchy without chunky box wrapper */}
                   <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="font-mono text-[12px] text-brand-300">{check.id}</span>
-                      <span className="text-[13px] font-medium text-mute-200">{check.name}</span>
+                    <div className="flex flex-wrap items-baseline gap-x-2.5">
+                      <span className="font-mono text-[12.5px] font-bold text-[#ffb77b]">
+                        {check.id}
+                      </span>
+                      <span className="text-[13.5px] font-medium text-[#f5f3f0]">
+                        {check.name}
+                      </span>
                     </div>
-                    <div className="gr-reason">
-                      <p className="pt-0.5 text-[12px] leading-snug text-mute-500">
-                        {check.reason}
-                      </p>
-                    </div>
+                    <p className="pt-1 text-[12px] leading-relaxed text-[#c7b0a6]">
+                      {check.reason}
+                    </p>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <div className="gr-verdict glass-flat mt-6 flex items-center gap-3 rounded-xl px-4 py-3">
-              <ShieldCheck size={16} className="shrink-0 text-pass-500" />
-              <p className="text-[13px] leading-relaxed text-mute-300">
+            <div className="gr-verdict mt-8 flex items-center gap-3 rounded-xl border border-[#34d399]/30 bg-[#34d399]/[0.08] px-4 py-3.5 shadow-lg opacity-0">
+              <ShieldCheck size={18} className="shrink-0 text-[#34d399]" />
+              <p className="text-[13px] leading-relaxed text-[#e5e2e3]">
                 All eight passed. Only now may the payment service open a Razorpay order — and
                 the purchase still will not settle until a webhook arrives whose signature
                 verifies.
@@ -221,3 +222,4 @@ export function GuardrailScene() {
     </section>
   );
 }
+export default GuardrailScene;

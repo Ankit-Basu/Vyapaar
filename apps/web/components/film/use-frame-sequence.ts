@@ -112,8 +112,8 @@ export function useFrameSequence(name: string) {
 
   /** decode ahead of the playhead, evict far-away frames */
   const manageWindow = useCallback((center: number) => {
-    const AHEAD = 16;
-    const KEEP = 32;
+    const AHEAD = 24;
+    const KEEP = 48;
     for (let d = 0; d <= AHEAD; d++) {
       const a = center + d;
       const b = center - d;

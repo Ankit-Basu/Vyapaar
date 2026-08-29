@@ -134,14 +134,13 @@ export function Reveal({
   );
 }
 
-/** Section eyebrow: a small numbered label above a heading. */
+/** Section eyebrow: a small numbered label above a heading in Kinetic style. */
 export function Eyebrow({ index, children }: { index: string; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="font-mono text-[11px] tabular-nums text-brand-500">{index}</span>
-      <span className="h-px w-8 bg-brand-500/40" />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-mute-400">
-        {children}
+    <div className="flex items-center gap-2.5">
+      <span className="size-1.5 rounded-full bg-[#ffb77b] shadow-[0_0_8px_#ffb77b]" />
+      <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.32em] text-[#ffb77b]">
+        {index} // {children}
       </span>
     </div>
   );

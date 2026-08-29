@@ -19,68 +19,45 @@
 
 @theme {
   /* ---------------------------------------------------------------- canvas --- */
-
-  /* Never pure black: glass needs an undertone to refract, and #000 gives it
-     nothing to work with. Surface steps are for *solid* base layers — scrims,
-     inputs, the page under the glass — not for the glass itself. */
-  --color-canvas: #07070d;
-  --color-surface-1: #0b0b14;
-  --color-surface-2: #12121f;
-  --color-surface-3: #1a1a2c;
+  --color-canvas: #0e0e0f;
+  --color-surface-1: #131314;
+  --color-surface-2: #1a191b;
+  --color-surface-3: #242326;
 
   /* ---------------------------------------------------------------- aurora --- */
-
-  /* Behind the glass, never in front of it. Violet and indigo sit close on the
-     wheel and carry the brand; teal is the complement that keeps the field from
-     going monochrome; magenta is a seasoning, kept smallest and faintest. */
-  --color-aurora-violet: #6d5ef7;
-  --color-aurora-indigo: #4f46e5;
-  --color-aurora-teal: #12b5a5;
-  --color-aurora-magenta: #c026d3;
+  --color-aurora-violet: #ffb77b;
+  --color-aurora-indigo: #b16d2e;
+  --color-aurora-teal: #ffd0a8;
+  --color-aurora-magenta: #d97706;
 
   /* ------------------------------------------------------------- interactive --- */
-
-  --color-accent: #7c6bff;
-  --color-accent-hover: #9184ff;
-  /* #7C6BFF as *text* drops to 3.2:1 over lit glass, which fails AA. This is
-     the variant to use whenever the accent is a word rather than a fill. 6.1:1. */
-  --color-accent-text: #a99bff;
+  --color-accent: #ffb77b;
+  --color-accent-hover: #ffd0a8;
+  --color-accent-text: #ffb77b;
 
   /* ---------------------------------------------------------------- status --- */
-
-  /*
-   * These three carry meaning. They are never decoration, never a gradient,
-   * and never used for an element whose state they do not describe.
-   */
   --color-approve: #34d399;
-  --color-gated: #fbbf24;
+  --color-gated: #ffb77b;
   --color-denied: #fb5b6b;
-  --color-skipped: #6e7188;
+  --color-skipped: #8f8078;
 
-  /* Text-safe variants. Green and amber already clear AA as-is; red does not
-     (4.03:1 over lit glass), so it gets lifted. */
-  --color-approve-text: #34d399; /* 6.67:1 */
-  --color-gated-text: #fbbf24; /* 7.68:1 */
-  --color-denied-text: #ff8a94; /* 5.69:1 */
-  --color-skipped-text: #9799a9; /* 4.54:1 */
+  --color-approve-text: #34d399;
+  --color-gated-text: #ffb77b;
+  --color-denied-text: #ff8a94;
+  --color-skipped-text: #b89a8e;
 
   /* ------------------------------------------------------------------ text --- */
-
-  --color-heading: #f5f6fb; /* 11.9:1 */
-  --color-body: #a7a9be; /*  5.5:1 */
-  /* The brief's caption #6E7188 measured 2.59:1 over lit glass and 4.19:1 even
-     on bare canvas — it failed AA everywhere it could land. Lifted until it
-     clears 4.5:1 on the worst background rather than the best one. */
-  --color-caption: #9799a9; /*  4.3:1 — see note on .u-caption below */
+  --color-heading: #f5f3f0;
+  --color-body: #e5e2e3;
+  --color-caption: #b89a8e;
 
   /* ------------------------------------------------------------------ type --- */
+  --font-display: var(--font-newsreader), "Newsreader", "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-newsreader), "Newsreader", "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-grotesk), var(--font-geist-mono), ui-monospace, monospace;
 
-  --font-display: var(--font-clash-display), "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
-
-  /* One scale. Display is Clash and used with restraint; everything else is
-     Geist. Money and hashes are always mono. */
+  /* One scale. Display is Newsreader serif and used with restraint; everything else is Space Grotesk. */
   --text-display-xl: clamp(2.75rem, 6.5vw, 5rem);
   --text-display-lg: clamp(2rem, 4vw, 3.25rem);
   --text-display-md: clamp(1.5rem, 2.6vw, 2.125rem);
@@ -90,7 +67,6 @@
   --text-micro: 0.6875rem;
 
   /* --------------------------------------------------------------- easing --- */
-
   --ease-glass: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -714,26 +690,16 @@
 
 /*
  * The footage is a coin in a graphite void, so the void should become the
- * page rather than sit on it in a rectangle. Contain-fit keeps the coin whole
- * at every aspect (never cover-crop a hero object), and the mask dissolves the
- * frame's edges into the background.
+ * page rather than sit on it in a rectangle. Cover-fit keeps the canvas
+ * seamless, and the mask dissolves edges into the background.
  */
 .film-canvas {
-  /*
-   * The canvas draws cover-fit internally, so there are no letterbox bars for
-   * a mask to hide any more. What is left is an ordinary vignette: it darkens
-   * the far corners so the film settles into the page instead of ending at a
-   * visible rectangle, and it no longer cuts into the frame the way the old
-   * edge-dissolving mask did.
-   *
-   * Only the standard property is written; hand-writing the -webkit- twin
-   * makes Lightning CSS dedupe the pair and drop both.
-   */
   mask-image: radial-gradient(
-    130% 118% at 50% 48%,
-    #000 62%,
-    rgba(0, 0, 0, 0.86) 84%,
-    rgba(0, 0, 0, 0.55) 100%
+    135% 120% at 50% 48%,
+    #000 58%,
+    rgba(0, 0, 0, 0.82) 78%,
+    rgba(0, 0, 0, 0.45) 94%,
+    transparent 100%
   );
 }
 
@@ -743,14 +709,14 @@
   background:
     linear-gradient(
       100deg,
-      color-mix(in srgb, var(--color-canvas) 88%, transparent) 0%,
-      color-mix(in srgb, var(--color-canvas) 55%, transparent) 34%,
-      transparent 62%
+      color-mix(in srgb, var(--color-canvas) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-canvas) 60%, transparent) 32%,
+      transparent 58%
     ),
     linear-gradient(
       to top,
-      color-mix(in srgb, var(--color-canvas) 70%, transparent),
-      transparent 38%
+      color-mix(in srgb, var(--color-canvas) 75%, transparent),
+      transparent 35%
     );
 }
 
@@ -760,27 +726,30 @@
   .film-vignette {
     background: linear-gradient(
       to top,
-      color-mix(in srgb, var(--color-canvas) 92%, transparent) 0%,
-      color-mix(in srgb, var(--color-canvas) 66%, transparent) 38%,
-      transparent 70%
+      color-mix(in srgb, var(--color-canvas) 95%, transparent) 0%,
+      color-mix(in srgb, var(--color-canvas) 70%, transparent) 35%,
+      transparent 65%
     );
   }
 }
 
-/* Chapter copy arrives rather than cutting. Keyed on the chapter index, so it
-   replays each time the reader crosses a boundary in either direction. */
+/* Chapter copy arrives with a smooth spring animation. Keyed on chapter
+   transitions via GSAP timeline, so the animation replays at each
+   boundary crossing. */
 @keyframes film-copy-in {
   from {
     opacity: 0;
     transform: translateY(14px);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: none;
+    filter: blur(0px);
   }
 }
 .film-copy {
-  animation: film-copy-in 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: film-copy-in 680ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -788,3 +757,4 @@
     animation: none;
   }
 }
+
