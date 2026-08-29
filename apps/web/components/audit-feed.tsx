@@ -51,9 +51,11 @@ const RAIL_X = 22;
 export function AuditFeed({
   events,
   connection,
+  className,
 }: {
   events: AuditEvent[];
   connection: Connection;
+  className?: string;
 }) {
   const [chain, setChain] = useState<AuditChainVerification | null>(null);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
@@ -81,7 +83,7 @@ export function AuditFeed({
       subtitle="Append-only and hash-chained. Streamed live over SSE."
       icon={<ScrollText size={12} />}
       accent="info"
-      className="min-h-0"
+      className={cn("min-h-0", className)}
       bodyClassName="p-0"
       actions={
         <div className="flex items-center gap-2">

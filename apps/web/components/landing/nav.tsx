@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { Mark } from "@/components/brand";
 import { ThemeSwitcher } from "@/components/glass/theme";
 import { EASE, gsap, useScene } from "@/components/landing/motion";
 
@@ -166,22 +167,6 @@ function smoothTo(hash: string) {
   };
 }
 
-export function Mark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "skeu grid size-7 shrink-0 place-items-center rounded-lg text-[13px] font-bold text-canvas",
-        className,
-      )}
-      style={{
-        background:
-          "linear-gradient(140deg, var(--color-accent-text), var(--color-accent))",
-      }}
-    >
-      ₹
-    </span>
-  );
-}
 
 /**
  * The GitHub mark, inlined: lucide-react v1 dropped brand icons, and a generic
@@ -194,3 +179,5 @@ export function GithubMark({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export { Mark };

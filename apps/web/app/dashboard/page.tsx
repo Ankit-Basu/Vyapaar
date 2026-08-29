@@ -2,7 +2,6 @@
 
 import { formatPaise } from "@agentmandi/shared-types";
 import {
-  ArrowLeft,
   Bot,
   Boxes,
   CircleAlert,
@@ -11,15 +10,20 @@ import {
   FlaskConical,
   LayoutGrid,
   ListChecks,
-  RotateCcw,
   ScrollText,
   ShieldCheck,
   UserCheck,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 import {
   API_BASE,
@@ -29,18 +33,53 @@ import {
   resetDemo,
   type Health,
 } from "@/lib/api";
-import { useAuditStream } from "@/lib/use-audit-stream";
+import { useAuditStream, type Connection } from "@/lib/use-audit-stream";
 import { cn } from "@/lib/utils";
 import { MoltenBackground } from "@/components/glass/molten-background";
-import { ThemeSwitcher } from "@/components/glass/theme";
 import { AgentConsole } from "@/components/agent-console";
 import { AuditFeed } from "@/components/audit-feed";
-import { DashboardNav, type NavItem, type ViewId } from "@/components/dashboard-nav";
+import { DashboardNav, type NavGroup, type ViewId } from "@/components/dashboard-nav";
 import { IntentsPanel } from "@/components/intents-panel";
 import { LiveMetrics } from "@/components/live-metrics";
 import { MandatesPanel } from "@/components/mandates-panel";
 import { ScenarioRunner } from "@/components/scenario-runner";
-import { Badge, Button, LiveDot } from "@/components/ui";
+import { Badge, LiveDot } from "@/components/ui";
+
+/** What each view is called in the page title, and what it is for. */
+const VIEW_META: Record<ViewId, { title: string; accent: string; blurb: string }> = {
+  overview: {
+    title: "Dashboard",
+    accent: "Overview",
+    blurb: "Every panel at once — the view to leave open while the agent works.",
+  },
+  agent: {
+    title: "Buyer",
+    accent: "Agent",
+    blurb:
+      "An outside agent shopping under a bounded mandate, beside the budget it spends from.",
+  },
+  intents: {
+    title: "Purchase",
+    accent: "Intents",
+    blurb: "Every guardrail, in order, with the reason it passed or failed.",
+  },
+  mandates: {
+    title: "Signed",
+    accent: "Mandates",
+    blurb:
+      "Scope lives in the token. Spend is tracked server-side, where the holder cannot edit it.",
+  },
+  audit: {
+    title: "Audit",
+    accent: "Trail",
+    blurb: "Append-only and hash-chained. Edit one row and every row after it stops verifying.",
+  },
+  scenarios: {
+    title: "Demo",
+    accent: "Scenarios",
+    blurb: "Seven scripted runs against the real services — three of them failures, handled.",
+  },
+};
 
 /**
  * Counts for the rail.
@@ -67,7 +106,7 @@ function useSectionCounts(refreshKey: number) {
         });
       })
       .catch(() => {
-        /* the header already reports an unreachable API; the rail just goes quiet */
+        /* the top bar already reports an unreachable API; the rail goes quiet */
       });
     return () => {
       cancelled = true;
@@ -83,168 +122,18 @@ export default function Dashboard() {
   const bump = useCallback(() => setTick((t) => t + 1), []);
   const [view, setView] = useState<ViewId>("overview");
 
+  const [health, setHealth] = useState<Health | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
   // One subscription, several readers: the feed renders the rows, the strip
-  // above renders what they add up to, the rail counts them.
+  // renders what they add up to, the rail counts them.
   const { events, connection } = useAuditStream();
 
   // An event arriving is also a reason to re-read the panels, which is why the
   // stream's depth is folded into the same key.
   const refreshKey = tick + events.length;
   const counts = useSectionCounts(refreshKey);
-
-  const items = useMemo<NavItem[]>(
-    () => [
-      {
-        id: "overview",
-        label: "Overview",
-        icon: LayoutGrid,
-        hint: "Every panel at once",
-        count: null,
-      },
-      { id: "agent", label: "Buyer agent", icon: Bot, hint: "…the agent shops", count: null },
-      {
-        id: "intents",
-        label: "Purchase intents",
-        icon: ListChecks,
-        hint: "…guardrails decide",
-        count: counts.intents,
-        // The only thing on this screen that is genuinely waiting on a person.
-        tone: "gate",
-        urgent: counts.gated > 0,
-      },
-      {
-        id: "mandates",
-        label: "Mandates",
-        icon: Wallet,
-        hint: "Consent is granted…",
-        count: counts.liveMandates,
-        tone: "pass",
-      },
-      {
-        id: "audit",
-        label: "Audit trail",
-        icon: ScrollText,
-        hint: "…and it is all recorded",
-        count: events.length,
-      },
-      {
-        id: "scenarios",
-        label: "Scenarios",
-        icon: FlaskConical,
-        hint: "Seven scripted runs",
-        count: null,
-      },
-    ],
-    [counts, events.length],
-  );
-
-  /*
-   * Every view fills the same full-height twelve-column grid, and each pairs its
-   * subject with the panel that explains it — intents beside the trail that
-   * records them, the agent beside the mandate it spends from. That pairing is
-   * what keeps a focused view from being one panel and a lot of empty room.
-   */
-  const panes: Record<ViewId, ReactNode> = {
-    overview: (
-      <>
-        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 xl:col-span-4 xl:gap-5">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-[1.15]" />
-          <ScenarioRunner onActivity={bump} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 flex-col gap-3.5 xl:col-span-4 xl:gap-5">
-          <IntentsPanel refreshKey={refreshKey} className="flex-[1.25]" />
-          <MandatesPanel refreshKey={refreshKey} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-4">
-          <AuditFeed events={events} connection={connection} />
-        </div>
-      </>
-    ),
-    agent: (
-      <>
-        <div className="flex min-h-0 min-w-0 xl:col-span-7">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-5">
-          <MandatesPanel refreshKey={refreshKey} className="flex-1" />
-        </div>
-      </>
-    ),
-    intents: (
-      <>
-        <div className="flex min-h-0 min-w-0 xl:col-span-8">
-          <IntentsPanel refreshKey={refreshKey} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-4">
-          <AuditFeed events={events} connection={connection} />
-        </div>
-      </>
-    ),
-    mandates: (
-      <>
-        <div className="flex min-h-0 min-w-0 xl:col-span-7">
-          <MandatesPanel refreshKey={refreshKey} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-5">
-          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="flex-1" />
-        </div>
-      </>
-    ),
-    audit: (
-      <>
-        <div className="flex min-h-0 min-w-0 xl:col-span-8">
-          <AuditFeed events={events} connection={connection} />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-4">
-          <IntentsPanel refreshKey={refreshKey} className="flex-1" />
-        </div>
-      </>
-    ),
-    scenarios: (
-      <>
-        <div className="flex min-h-0 min-w-0 xl:col-span-7">
-          <ScenarioRunner onActivity={bump} className="flex-1" />
-        </div>
-        <div className="flex min-h-0 min-w-0 xl:col-span-5">
-          <AuditFeed events={events} connection={connection} />
-        </div>
-      </>
-    ),
-  };
-
-  return (
-    <main className="relative flex h-dvh flex-col gap-3.5 overflow-hidden p-3.5 lg:flex-row xl:gap-5 xl:p-5">
-      <MoltenBackground opacity={0.55} speed={0.18} scale={5} />
-
-      <DashboardNav items={items} active={view} connection={connection} onSelect={setView} />
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3.5 xl:gap-5">
-        <Header onReset={bump} refreshKey={refreshKey} connection={connection} />
-
-        {/* The pulse stays put across views: changing section should never mean
-            losing the numbers the room is actually judged by. */}
-        <LiveMetrics events={events} connection={connection} />
-
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 xl:grid-cols-12 xl:gap-5">
-          {panes[view]}
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function Header({
-  onReset,
-  refreshKey,
-  connection,
-}: {
-  onReset: () => void;
-  refreshKey: number;
-  connection: "connecting" | "live" | "offline";
-}) {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [offline, setOffline] = useState(false);
-  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     getHealth()
@@ -259,54 +148,218 @@ function Header({
     setResetting(true);
     try {
       await resetDemo();
-      onReset();
+      bump();
     } catch {
-      // The API being unreachable is already stated in the header; an unhandled
-      // rejection on top of it helps nobody.
       setOffline(true);
     } finally {
       setResetting(false);
     }
   }
 
+  const groups = useMemo<NavGroup[]>(
+    () => [
+      {
+        heading: "Main",
+        items: [
+          { id: "overview", label: "Overview", icon: LayoutGrid, count: null },
+          { id: "audit", label: "Audit trail", icon: ScrollText, count: events.length },
+        ],
+      },
+      {
+        heading: "The path of a rupee",
+        items: [
+          {
+            id: "mandates",
+            label: "Mandates",
+            icon: Wallet,
+            count: counts.liveMandates,
+            tone: "pass",
+          },
+          { id: "agent", label: "Buyer agent", icon: Bot, count: null },
+          {
+            id: "intents",
+            label: "Purchase intents",
+            icon: ListChecks,
+            count: counts.intents,
+            // The only thing on this screen genuinely waiting on a person.
+            tone: "gate",
+            urgent: counts.gated > 0,
+          },
+        ],
+      },
+      {
+        heading: "Demo",
+        items: [{ id: "scenarios", label: "Scenarios", icon: FlaskConical, count: null }],
+      },
+    ],
+    [counts, events.length],
+  );
+
+  /*
+   * Panels get explicit heights instead of being squeezed into the viewport.
+   * The page scrolls now — the old fixed `h-dvh` grid is exactly what made
+   * everything compress until it read as congested, because there was nowhere
+   * for the spacing to go.
+   */
+  const panes: Record<ViewId, ReactNode> = {
+    overview: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-6 xl:col-span-4">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[27rem]" />
+          <ScenarioRunner onActivity={bump} className="h-[30rem]" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-6 xl:col-span-4">
+          <IntentsPanel refreshKey={refreshKey} className="h-[30rem]" />
+          <MandatesPanel refreshKey={refreshKey} className="h-[27rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-4">
+          <AuditFeed events={events} connection={connection} className="h-[59rem]" />
+        </div>
+      </div>
+    ),
+    agent: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 xl:col-span-7">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[40rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-5">
+          <MandatesPanel refreshKey={refreshKey} className="h-[40rem]" />
+        </div>
+      </div>
+    ),
+    intents: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 xl:col-span-8">
+          <IntentsPanel refreshKey={refreshKey} className="h-[44rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-4">
+          <AuditFeed events={events} connection={connection} className="h-[44rem]" />
+        </div>
+      </div>
+    ),
+    mandates: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 xl:col-span-7">
+          <MandatesPanel refreshKey={refreshKey} className="h-[40rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-5">
+          <AgentConsole onActivity={bump} refreshKey={refreshKey} className="h-[40rem]" />
+        </div>
+      </div>
+    ),
+    audit: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 xl:col-span-8">
+          <AuditFeed events={events} connection={connection} className="h-[46rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-4">
+          <IntentsPanel refreshKey={refreshKey} className="h-[46rem]" />
+        </div>
+      </div>
+    ),
+    scenarios: (
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex min-w-0 xl:col-span-7">
+          <ScenarioRunner onActivity={bump} className="h-[44rem]" />
+        </div>
+        <div className="flex min-w-0 xl:col-span-5">
+          <AuditFeed events={events} connection={connection} className="h-[44rem]" />
+        </div>
+      </div>
+    ),
+  };
+
+  const meta = VIEW_META[view];
+
   return (
-    <header className="glass-surface glass-d3 relative z-40 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2.5 rounded-2xl border border-white/[0.09] px-5 py-3 shadow-xl backdrop-blur-2xl">
-      <div
-        className="absolute inset-x-0 top-0 h-px rounded-t-2xl"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--color-brand-500), var(--color-violet-400), var(--color-brand-500), transparent)",
-          backgroundSize: "200% 100%",
-          animation: "divider-travel 6s ease-in-out infinite",
-          opacity: 0.8,
-        }}
-        aria-hidden
-      />
+    <div className="relative min-h-dvh p-4 lg:flex lg:gap-6 lg:p-6">
+      <MoltenBackground opacity={0.55} speed={0.18} scale={5} />
 
-      {/* The rail carries the wordmark on wide screens, so this only shows where
-          the rail has collapsed into a horizontal strip. */}
-      <Link
-        href="/"
-        className="group flex items-center gap-3 lg:hidden"
-        title="Back to the overview"
-      >
-        <span className="relative grid size-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 via-brand-400 to-violet-500 text-[15px] font-bold text-white shadow-lg shadow-brand-500/30">
-          <span className="relative transition-opacity group-hover:opacity-0">₹</span>
-          <ArrowLeft
-            size={15}
-            className="absolute opacity-0 transition-opacity group-hover:opacity-100"
-          />
-        </span>
-        <span>
-          <h1 className="text-[14px] leading-tight font-semibold tracking-tight text-mute-100">
-            AgentMandi
+      {/* The rail holds still while the page scrolls past it. */}
+      <div className="mb-4 lg:sticky lg:top-6 lg:mb-0 lg:h-[calc(100dvh-3rem)]">
+        <DashboardNav
+          groups={groups}
+          active={view}
+          connection={connection}
+          merchant="Kirana Labs"
+          onSelect={setView}
+          onReset={reset}
+          resetting={resetting}
+          resetDisabled={resetting || offline}
+        />
+      </div>
+
+      <main className="min-w-0 flex-1">
+        <TopBar health={health} offline={offline} connection={connection} />
+
+        <header className="mt-8 mb-8">
+          <p className="text-[11px] font-medium tracking-[0.18em] text-mute-500 uppercase">
+            <Today />
+            {" — "}
+            {offline ? "api unreachable" : "live"}
+          </p>
+          <h1 className="mt-3 text-[clamp(2rem,3.4vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em] text-mute-100">
+            {meta.title}{" "}
+            <span
+              style={{
+                background:
+                  "linear-gradient(100deg, var(--color-brand-400), var(--color-violet-400))",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              {meta.accent}
+            </span>
           </h1>
-          <p className="text-[11px] leading-tight text-mute-400">Agent commerce layer</p>
-        </span>
-      </Link>
+          <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-mute-400">{meta.blurb}</p>
+        </header>
 
+        <div className="mb-8">
+          <LiveMetrics events={events} connection={connection} />
+        </div>
+
+        <div className="pb-6">{panes[view]}</div>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Today's date, in the reader's own locale and timezone.
+ *
+ * Read through a store rather than set in an effect: the server has no business
+ * guessing either, so its snapshot is empty and the client fills it in on the
+ * first render after hydration. `getSnapshot` returns a fresh string each call
+ * but the same *value*, which is what React compares.
+ */
+const NEVER_CHANGES = () => () => {};
+
+function Today() {
+  const label = useSyncExternalStore(
+    NEVER_CHANGES,
+    () =>
+      new Date()
+        .toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+        .toUpperCase(),
+    () => "",
+  );
+  return <>{label}</>;
+}
+
+function TopBar({
+  health,
+  offline,
+  connection,
+}: {
+  health: Health | null;
+  offline: boolean;
+  connection: Connection;
+}) {
+  return (
+    <div className="glass-surface glass-d2 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-white/[0.08] px-4 py-3 shadow-lg backdrop-blur-xl">
       {offline ? (
-        <span className="flex items-center gap-1.5 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-1.5 text-[12px] font-medium text-fail-500 shadow-sm">
+        <span className="flex items-center gap-2 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-1.5 text-[12px] font-medium text-fail-500">
           <CircleAlert size={13} />
           API unreachable at {API_BASE}
         </span>
@@ -337,7 +390,7 @@ function Header({
       )}
 
       <div className="ml-auto flex items-center gap-2.5">
-        <span className="hidden items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-mute-300 shadow-sm sm:inline-flex">
+        <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-mute-300">
           <LiveDot
             tone={connection === "live" ? "pass" : connection === "offline" ? "fail" : "gate"}
             active={connection === "live"}
@@ -348,9 +401,9 @@ function Header({
           <>
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold shadow-sm",
+                "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold",
                 health.audit_chain_valid
-                  ? "border-pass-500/30 bg-pass-bg/60 text-pass-500 shadow-pass-500/10"
+                  ? "border-pass-500/30 bg-pass-bg/60 text-pass-500"
                   : "border-fail-500/30 bg-fail-bg/60 text-fail-500",
               )}
               title={`${health.audit_events} events recorded since the last reset`}
@@ -365,13 +418,8 @@ function Header({
             ))}
           </>
         )}
-        <ThemeSwitcher />
-        <Button size="sm" variant="ghost" onClick={reset} disabled={resetting || offline}>
-          <RotateCcw size={12} className={resetting ? "animate-spin" : undefined} />
-          Reset demo
-        </Button>
       </div>
-    </header>
+    </div>
   );
 }
 

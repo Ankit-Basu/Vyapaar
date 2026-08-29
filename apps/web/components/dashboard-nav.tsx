@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ExternalLink, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
 import type { Connection } from "@/lib/use-audit-stream";
 import { cn } from "@/lib/utils";
-import { TONE_COLOR, type Tone } from "@/components/ui";
+import { Wordmark } from "@/components/brand";
+import { LiveDot, TONE_COLOR, type Tone } from "@/components/ui";
 
 export type ViewId =
   | "overview"
@@ -20,99 +21,114 @@ export type NavItem = {
   id: ViewId;
   label: string;
   icon: LucideIcon;
-  /** What *happens* at this stage, in the product's own voice. */
-  hint: string;
-  /** Live count. `tone` colours it when it needs attention. */
   count?: number | null;
   tone?: Tone;
   /** Draws attention while something is genuinely waiting on a person. */
   urgent?: boolean;
 };
 
+export type NavGroup = { heading: string; items: NavItem[] };
+
 /**
  * The rail.
  *
- * Not a list of pages. The four middle entries are the actual stages a rupee
- * passes through — consent is granted, the agent shops, the guardrails decide,
- * the trail records — drawn as one connected line with a node per stage. It is
- * the same chain metaphor the audit feed uses, applied to navigation, and it
- * carries the same travelling highlight while the stream is live.
+ * Grouped rather than a flat list, because the six sections are not peers: two
+ * are ways of looking at the whole room, three are stages a rupee passes
+ * through, and one is a test harness. The headings say so.
  *
- * The counts matter as much as the links: focusing one section should never
- * mean going blind to the others.
+ * Counts live on the rows so that focusing one section never means going blind
+ * to the others — that was the whole risk in trading the everything-at-once
+ * grid for one view at a time.
  */
 export function DashboardNav({
-  items,
+  groups,
   active,
   connection,
+  merchant,
   onSelect,
+  onReset,
+  resetting,
+  resetDisabled,
 }: {
-  items: NavItem[];
+  groups: NavGroup[];
   active: ViewId;
   connection: Connection;
+  merchant: string;
   onSelect: (id: ViewId) => void;
+  onReset: () => void;
+  resetting: boolean;
+  resetDisabled: boolean;
 }) {
-  const overview = items.find((i) => i.id === "overview");
-  const scenarios = items.find((i) => i.id === "scenarios");
-  // Ordered the way money actually moves, not the way the panels are laid out.
-  const flow = (["mandates", "agent", "intents", "audit"] as const)
-    .map((id) => items.find((i) => i.id === id))
-    .filter((i): i is NavItem => Boolean(i));
-
   return (
-    <nav
-      aria-label="Control room sections"
-      className="glass-surface glass-d3 flex shrink-0 flex-row gap-1 overflow-x-auto rounded-2xl border border-white/[0.08] p-2.5 shadow-xl backdrop-blur-2xl lg:w-[16.5rem] lg:flex-col lg:overflow-visible"
-    >
+    <aside className="glass-surface glass-d3 flex shrink-0 flex-col gap-1 rounded-2xl border border-white/[0.08] p-3 shadow-xl backdrop-blur-2xl lg:w-[16rem]">
       <Link
         href="/"
+        className="mb-3 rounded-xl px-1.5 py-1 transition-colors hover:bg-white/[0.04]"
         title="Back to the overview page"
-        className="group mb-2 hidden items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/[0.05] lg:flex"
       >
-        <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 text-[15px] font-bold text-white shadow-lg shadow-brand-500/30">
-          <span className="transition-opacity group-hover:opacity-0">₹</span>
-          <ArrowLeft
-            size={14}
-            className="absolute opacity-0 transition-opacity group-hover:opacity-100"
-          />
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-[14px] leading-tight font-semibold tracking-tight text-mute-100">
-            AgentMandi
-          </span>
-          <span className="block truncate text-[10px] leading-tight tracking-[0.16em] text-mute-500 uppercase">
-            control room
-          </span>
-        </span>
+        <Wordmark />
       </Link>
 
-      {overview && <Row item={overview} active={active} onSelect={onSelect} />}
-
-      <p className="mt-3 mb-1.5 hidden px-2 text-[9px] leading-none tracking-[0.18em] text-mute-500 uppercase lg:block">
-        The path of a rupee
-      </p>
-
-      {/* The flow. One rail, four nodes, drawn once for the whole group. */}
-      <div className="relative flex flex-row gap-1 lg:flex-col">
-        <span
-          className="pointer-events-none absolute top-4 bottom-4 left-[26px] hidden w-px bg-white/[0.09] lg:block"
-          aria-hidden
-        />
-        {connection === "live" && (
-          <span
-            className="chain-flow pointer-events-none absolute top-4 bottom-4 left-[26px] hidden w-px opacity-70 lg:block"
-            aria-hidden
-          />
-        )}
-        {flow.map((item) => (
-          <Row key={item.id} item={item} active={active} onSelect={onSelect} onFlow />
+      <nav aria-label="Control room sections" className="flex flex-1 flex-col gap-1">
+        {groups.map((group) => (
+          <div key={group.heading} className="mb-2">
+            <p className="mb-1.5 px-2 text-[10px] leading-none font-medium tracking-[0.16em] text-mute-500 uppercase">
+              {group.heading}
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <Row key={item.id} item={item} active={active} onSelect={onSelect} />
+              ))}
+            </div>
+          </div>
         ))}
+      </nav>
+
+      {/* Reset is destructive — it wipes the trail — so it sits apart from
+          navigation rather than among it. */}
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={resetDisabled}
+        className="mb-2 flex items-center gap-2.5 rounded-xl border border-fail-500/25 bg-fail-bg/40 px-3 py-2.5 text-left text-[12px] font-medium text-fail-500 transition-colors hover:border-fail-500/50 hover:bg-fail-bg/70 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+      >
+        <RotateCcw size={13} className={resetting ? "animate-spin" : undefined} />
+        Reset demo
+        <span className="ml-auto text-[10px] text-fail-500/70">clears trail</span>
+      </button>
+
+      {/* Who this room belongs to, and whether it is actually hearing anything. */}
+      <div className="flex items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
+        <span
+          className="grid size-8 shrink-0 place-items-center rounded-lg text-[13px] font-semibold"
+          style={{
+            background: "color-mix(in srgb, var(--color-brand-500) 18%, transparent)",
+            color: "var(--color-brand-300)",
+          }}
+        >
+          {merchant.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12px] leading-tight font-medium text-mute-200">
+            {merchant}
+          </span>
+          <span className="flex items-center gap-1.5 text-[10.5px] leading-tight text-mute-500">
+            <LiveDot
+              tone={connection === "live" ? "pass" : connection === "offline" ? "fail" : "gate"}
+              active={connection === "live"}
+            />
+            {connection === "live" ? "streaming" : connection}
+          </span>
+        </span>
+        <Link
+          href="/"
+          className="shrink-0 rounded-md p-1 text-mute-500 transition-colors hover:text-mute-200"
+          aria-label="Back to the overview page"
+        >
+          <ExternalLink size={13} />
+        </Link>
       </div>
-
-      <span className="mx-2 my-2 hidden h-px bg-white/[0.07] lg:block" aria-hidden />
-
-      {scenarios && <Row item={scenarios} active={active} onSelect={onSelect} />}
-    </nav>
+    </aside>
   );
 }
 
@@ -120,13 +136,10 @@ function Row({
   item,
   active,
   onSelect,
-  onFlow = false,
 }: {
   item: NavItem;
   active: ViewId;
   onSelect: (id: ViewId) => void;
-  /** Sits on the pipeline rail, so it draws a node instead of a plain icon tile. */
-  onFlow?: boolean;
 }) {
   const selected = item.id === active;
   const hue = TONE_COLOR[item.tone ?? "info"];
@@ -137,38 +150,24 @@ function Row({
       onClick={() => onSelect(item.id)}
       aria-current={selected ? "page" : undefined}
       className={cn(
-        "group relative flex shrink-0 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500",
-        selected ? "bg-white/[0.08] text-mute-100" : "text-mute-400 hover:bg-white/[0.04] hover:text-mute-200",
+        "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500",
+        selected
+          ? "bg-white/[0.07] text-mute-100"
+          : "text-mute-400 hover:bg-white/[0.04] hover:text-mute-200",
       )}
     >
-      <span
-        className={cn(
-          "relative z-10 grid size-8 shrink-0 place-items-center rounded-xl border transition-colors",
-          selected ? "border-transparent" : "border-white/[0.08]",
-          // A node on the rail has to be opaque or the line shows through it.
-          onFlow && "bg-ink-950",
-        )}
-        style={
-          selected
-            ? {
-                background: "color-mix(in srgb, var(--color-brand-500) 22%, var(--color-ink-950))",
-                color: "var(--color-brand-300)",
-                boxShadow: "0 0 0 3px color-mix(in srgb, var(--color-brand-500) 14%, transparent)",
-              }
-            : undefined
-        }
-      >
-        <item.icon size={14} />
-      </span>
-
-      {/* One label in the DOM, not one per breakpoint: two copies hidden by CSS
-          make a screen reader announce every row twice. */}
-      <span className="min-w-0 lg:flex-1">
-        <span className="block truncate text-[12px] leading-tight font-medium">{item.label}</span>
-        <span className="hidden truncate text-[10px] leading-tight text-mute-500 lg:block">
-          {item.hint}
-        </span>
-      </span>
+      {selected && (
+        <span
+          className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
+          style={{ background: "var(--color-brand-500)" }}
+          aria-hidden
+        />
+      )}
+      <item.icon
+        size={15}
+        className={cn("shrink-0", selected ? "text-brand-300" : "text-mute-500")}
+      />
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{item.label}</span>
 
       {item.count !== null && item.count !== undefined && (
         <span
@@ -178,7 +177,7 @@ function Row({
           )}
           style={
             item.urgent
-              ? { background: `color-mix(in srgb, ${hue} 22%, transparent)`, color: hue }
+              ? { background: `color-mix(in srgb, ${hue} 24%, transparent)`, color: hue }
               : { background: "rgba(255,255,255,0.06)", color: "var(--color-mute-400)" }
           }
         >
