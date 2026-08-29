@@ -33,7 +33,7 @@ import {
   resetDemo,
   type Health,
 } from "@/lib/api";
-import { useAuditStream, type Connection } from "@/lib/use-audit-stream";
+import { useAuditStream } from "@/lib/use-audit-stream";
 import { cn } from "@/lib/utils";
 import { MoltenBackground } from "@/components/glass/molten-background";
 import { AgentConsole } from "@/components/agent-console";
@@ -290,36 +290,56 @@ export default function Dashboard() {
       </div>
 
       <main className="min-w-0 flex-1">
-        <TopBar health={health} offline={offline} connection={connection} />
+        {/*
+         * The title and the run configuration share one surface. Kept apart,
+         * the heading floated as bare text in a transparent band and about
+         * 170px of the page read as empty — the gap was not spacing, it was a
+         * region with nothing to sit on.
+         */}
+        <header className="glass-surface glass-d2 rounded-2xl border border-white/[0.08] px-6 py-5 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-5">
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-[11px] font-medium tracking-[0.18em] text-mute-500 uppercase">
+                <Today />
+                <span aria-hidden>·</span>
+                <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
+                  <LiveDot
+                    tone={
+                      connection === "live" ? "pass" : connection === "offline" ? "fail" : "gate"
+                    }
+                    active={connection === "live"}
+                  />
+                  {offline ? "API unreachable" : connection === "live" ? "streaming" : connection}
+                </span>
+              </p>
+              <h1 className="mt-2.5 text-[clamp(1.75rem,2.8vw,2.35rem)] leading-[1.08] font-semibold tracking-[-0.03em] text-mute-100">
+                {meta.title}{" "}
+                <span
+                  style={{
+                    background:
+                      "linear-gradient(100deg, var(--color-brand-400), var(--color-violet-400))",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  {meta.accent}
+                </span>
+              </h1>
+              <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-mute-400">
+                {meta.blurb}
+              </p>
+            </div>
 
-        <header className="mt-8 mb-8">
-          <p className="text-[11px] font-medium tracking-[0.18em] text-mute-500 uppercase">
-            <Today />
-            {" — "}
-            {offline ? "api unreachable" : "live"}
-          </p>
-          <h1 className="mt-3 text-[clamp(2rem,3.4vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em] text-mute-100">
-            {meta.title}{" "}
-            <span
-              style={{
-                background:
-                  "linear-gradient(100deg, var(--color-brand-400), var(--color-violet-400))",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              {meta.accent}
-            </span>
-          </h1>
-          <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-mute-400">{meta.blurb}</p>
+            <RunConfig health={health} offline={offline} />
+          </div>
         </header>
 
-        <div className="mb-8">
+        <div className="mt-6">
           <LiveMetrics events={events} connection={connection} />
         </div>
 
-        <div className="pb-6">{panes[view]}</div>
+        <div className="mt-6 pb-6">{panes[view]}</div>
       </main>
     </div>
   );
@@ -347,77 +367,60 @@ function Today() {
   return <>{label}</>;
 }
 
-function TopBar({
-  health,
-  offline,
-  connection,
-}: {
-  health: Health | null;
-  offline: boolean;
-  connection: Connection;
-}) {
-  return (
-    <div className="glass-surface glass-d2 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-white/[0.08] px-4 py-3 shadow-lg backdrop-blur-xl">
-      {offline ? (
-        <span className="flex items-center gap-2 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-1.5 text-[12px] font-medium text-fail-500">
-          <CircleAlert size={13} />
-          API unreachable at {API_BASE}
-        </span>
-      ) : (
-        health && (
-          <div className="flex flex-wrap items-stretch divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-white/[0.02]">
-            <Chip
-              icon={CreditCard}
-              label="payments"
-              value={health.payments_mode === "live" ? "Razorpay test mode" : "local simulator"}
-              tone={health.payments_mode === "live" ? "pass" : "mute"}
-            />
-            <Chip icon={Cpu} label="planner" value={health.llm_model} tone="mute" />
-            <Chip
-              icon={UserCheck}
-              label="human gate"
-              value={formatPaise(health.hitl_threshold_paise)}
-              tone="gate"
-            />
-            <Chip
-              icon={Boxes}
-              label="catalog"
-              value={`${health.catalog_products} products`}
-              tone="mute"
-            />
-          </div>
-        )
-      )}
+/** The run's configuration and integrity, aligned to the right of the title. */
+function RunConfig({ health, offline }: { health: Health | null; offline: boolean }) {
+  if (offline) {
+    return (
+      <span className="flex items-center gap-2 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-2 text-[12px] font-medium text-fail-500">
+        <CircleAlert size={13} />
+        API unreachable at {API_BASE}
+      </span>
+    );
+  }
+  if (!health) return null;
 
-      <div className="ml-auto flex items-center gap-2.5">
-        <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-mute-300">
-          <LiveDot
-            tone={connection === "live" ? "pass" : connection === "offline" ? "fail" : "gate"}
-            active={connection === "live"}
-          />
-          {connection === "live" ? "streaming" : connection}
+  return (
+    <div className="flex flex-col items-start gap-3 sm:items-end">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold",
+            health.audit_chain_valid
+              ? "border-pass-500/30 bg-pass-bg/60 text-pass-500"
+              : "border-fail-500/30 bg-fail-bg/60 text-fail-500",
+          )}
+          title={`${health.audit_events} events recorded since the last reset`}
+        >
+          <ShieldCheck size={13} />
+          {health.audit_chain_valid ? "chain intact" : "chain broken"}
         </span>
-        {health && !offline && (
-          <>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold",
-                health.audit_chain_valid
-                  ? "border-pass-500/30 bg-pass-bg/60 text-pass-500"
-                  : "border-fail-500/30 bg-fail-bg/60 text-fail-500",
-              )}
-              title={`${health.audit_events} events recorded since the last reset`}
-            >
-              <ShieldCheck size={13} />
-              {health.audit_chain_valid ? "chain intact" : "chain broken"}
-            </span>
-            {health.warnings.map((warning) => (
-              <Badge key={warning} tone="gate" title={warning}>
-                dev secret
-              </Badge>
-            ))}
-          </>
-        )}
+        {health.warnings.map((warning) => (
+          <Badge key={warning} tone="gate" title={warning}>
+            dev secret
+          </Badge>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-stretch divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-white/[0.02]">
+        <Chip
+          icon={CreditCard}
+          label="payments"
+          value={health.payments_mode === "live" ? "Razorpay test mode" : "local simulator"}
+          tone={health.payments_mode === "live" ? "pass" : "mute"}
+        />
+        <Chip icon={Cpu} label="planner" value={health.llm_model} tone="mute" />
+        <Chip
+          icon={UserCheck}
+          label="human gate"
+          value={formatPaise(health.hitl_threshold_paise)}
+          tone="gate"
+        />
+        <Chip
+          icon={Boxes}
+          label="catalog"
+          value={`${health.catalog_products} products`}
+          tone="mute"
+        />
       </div>
     </div>
   );
