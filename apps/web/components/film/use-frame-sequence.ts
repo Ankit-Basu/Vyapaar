@@ -60,8 +60,9 @@ export function useFrameSequence(name: string) {
     (async () => {
       /*
        * Root-absolute, not relative. A relative fetch resolves against the
-       * current route, so on `/story` it asked for `/story/frames/...` and
-       * 404'd — leaving the canvas at zero size and the film invisible.
+       * current route, so on any nested page it asks for
+       * `/<route>/frames/...` and 404s — which left the canvas at zero size
+       * and the film invisible the first time this ran off the root.
        */
       const m = await fetch(`/frames/${name}/manifest.json`).then((r) => r.json());
       if (!alive) return;
@@ -162,7 +163,15 @@ export function useFrameSequence(name: string) {
     if (!frame) return;
     const src = frame.img;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    /*
+     * Device pixel ratio is deliberately capped at 1.
+     *
+     * The footage is 1280x720. On a 1500px canvas at DPR 2 the backing store is
+     * 3000px and every frame gets upscaled 2.3x — four times the pixels to
+     * push, and not one of them sharper, because the source has no more detail
+     * to give. At DPR 1 the same frame is upscaled 1.17x and looks better.
+     */
+    const dpr = 1;
     const cw = Math.round(canvas.clientWidth * dpr);
     const ch = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== cw || canvas.height !== ch) {
@@ -172,7 +181,18 @@ export function useFrameSequence(name: string) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, cw, ch);
-    const s = Math.min(cw / src.width, ch / src.height);
+
+    /*
+     * Cover, not contain.
+     *
+     * Contain letterboxes, and the bars have to be filled with *something*.
+     * This footage's void is not a flat colour — it runs from #454d58 at the
+     * top-left god-ray to #090b0c at the bottom-right — so no page background
+     * can meet its edge without a visible seam down the sides. Cover removes
+     * the bars entirely. It costs a crop, but the coin sits centred with wide
+     * margins, so at ordinary window shapes the crop takes only empty void.
+     */
+    const s = Math.max(cw / src.width, ch / src.height);
     const w = src.width * s;
     const h = src.height * s;
     ctx.drawImage(src, (cw - w) / 2, (ch - h) / 2, w, h);

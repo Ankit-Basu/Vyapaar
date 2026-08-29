@@ -719,18 +719,21 @@
  * frame's edges into the background.
  */
 .film-canvas {
-  object-fit: contain;
+  /*
+   * The canvas draws cover-fit internally, so there are no letterbox bars for
+   * a mask to hide any more. What is left is an ordinary vignette: it darkens
+   * the far corners so the film settles into the page instead of ending at a
+   * visible rectangle, and it no longer cuts into the frame the way the old
+   * edge-dissolving mask did.
+   *
+   * Only the standard property is written; hand-writing the -webkit- twin
+   * makes Lightning CSS dedupe the pair and drop both.
+   */
   mask-image: radial-gradient(
-    118% 96% at 50% 50%,
-    #000 42%,
-    rgba(0, 0, 0, 0.72) 68%,
-    transparent 96%
-  );
-  -webkit-mask-image: radial-gradient(
-    118% 96% at 50% 50%,
-    #000 42%,
-    rgba(0, 0, 0, 0.72) 68%,
-    transparent 96%
+    130% 118% at 50% 48%,
+    #000 62%,
+    rgba(0, 0, 0, 0.86) 84%,
+    rgba(0, 0, 0, 0.55) 100%
   );
 }
 

@@ -108,7 +108,7 @@ export function RupeeFilm() {
           trigger: root.current,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.55,
+          scrub: 0.3,
           onUpdate: (self) => {
             draw(canvas.current, self.progress);
             const found = CHAPTERS.findIndex(

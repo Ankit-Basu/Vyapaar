@@ -7,6 +7,15 @@ type Props = {
   speed?: number;
   scale?: number;
   mouseStrength?: number;
+  /**
+   * Run the WebGL field at all.
+   *
+   * Off keeps the ground and the vignette but skips the shader — which is what
+   * a page wants when its hero is already a full-screen canvas. A WebGL loop
+   * behind an opaque surface renders frames nobody can see and is the first
+   * thing to cost you smooth scrolling.
+   */
+  shader?: boolean;
   className?: string;
 };
 
@@ -15,13 +24,16 @@ export function MoltenBackground({
   speed = 0.35,
   scale = 3.8,
   mouseStrength = 0.35,
+  shader = true,
   className,
 }: Props) {
   return (
     <div
       className={`pointer-events-none fixed inset-0 z-0 overflow-hidden ${className || ""}`}
+      style={shader ? undefined : { background: "#05070f" }}
       aria-hidden
     >
+      {shader && (
       <MoltenMetal
         color1="#5227FF"
         color2="#FF9FFC"
@@ -43,6 +55,7 @@ export function MoltenBackground({
         opacity={opacity}
         backgroundColor="#05070f"
       />
+      )}
       {/* Subtle vignette / gradient overlay to ensure perfect contrast for text */}
       <div
         className="pointer-events-none absolute inset-0"
