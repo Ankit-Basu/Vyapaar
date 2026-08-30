@@ -1,4 +1,4 @@
-"""AgentMandi API -- the agent commerce layer in front of a Razorpay merchant.
+"""Vyapaar API -- the agent commerce layer in front of a Razorpay merchant.
 
 Boot order matters: schema first, then bind the SSE broadcaster to the running
 event loop (audit rows are written from worker threads and have to hop back onto
@@ -24,6 +24,9 @@ from .catalog.router import router as catalog_router
 from .config import get_settings
 from .db import init_db
 from .demo.router import router as demo_router
+from .growth import campaigns as growth_campaigns
+from .growth import economics as growth_economics
+from .growth.router import router as growth_router
 from .intents.router import router as intents_router
 from .mandate.router import router as mandate_router
 from .payments.gateway import get_gateway
@@ -35,7 +38,7 @@ logging.basicConfig(
     format="%(asctime)s  %(levelname)-7s %(name)-28s %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("agentmandi")
+log = logging.getLogger("vyapaar")
 
 API_VERSION = "0.1.0"
 
@@ -50,11 +53,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         result = catalog.ingest_seed_file()
         log.info("seeded catalog: %s products from %s", result["ingested"], result["source"])
 
+    # Unit economics are derived, not authored, so they stay in step with whatever
+    # the catalog holds. A merchant with no campaign makes no offers at all, so one
+    # is opened on first boot -- both calls are idempotent.
+    filled = growth_economics.seed_economics()
+    if filled["inserted"]:
+        log.info("derived unit economics for %s products", filled["inserted"])
+    campaign = growth_campaigns.ensure_default_campaign()
+
     gateway = get_gateway()
     log.info("merchant   : %s (%s)", settings.merchant_name, settings.merchant_id)
     log.info("payments   : %s", gateway.mode)
     log.info("llm        : %s / %s", settings.effective_llm_provider, settings.effective_llm_model)
     log.info("HITL gate  : INR %.2f", settings.hitl_threshold_paise / 100)
+    log.info(
+        "campaign   : %s (budget INR %.2f, max %.2f%% off, floor %.2f%% margin)",
+        campaign.name,
+        campaign.discount_budget_paise / 100,
+        campaign.max_discount_bps / 100,
+        campaign.floor_margin_bps / 100,
+    )
     if settings.using_default_mandate_secret:
         log.warning(
             "MANDATE_JWT_SECRET is the built-in development default. "
@@ -65,7 +83,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="AgentMandi",
+    title="Vyapaar",
     version=API_VERSION,
     lifespan=lifespan,
     summary="An agent commerce layer: discovery, signed mandates, guardrails and payments.",
@@ -92,6 +110,7 @@ for router in (
     payments_router,
     audit_router,
     agent_router,
+    growth_router,
     demo_router,
 ):
     app.include_router(router)
@@ -107,7 +126,7 @@ async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse
 def root() -> dict:
     settings = get_settings()
     return {
-        "service": "AgentMandi",
+        "service": "Vyapaar",
         "version": API_VERSION,
         "description": (
             "Agent commerce layer for a Razorpay test-mode merchant. Discover products, "
@@ -120,11 +139,16 @@ def root() -> dict:
             "catalog_feed": "ACP-style machine-readable feed at GET /catalog/feed",
             "mandate": "AP2-style signed JWT encoding scope, caps and expiry",
             "mcp": "MCP server exposes search_catalog, get_product, create_purchase_intent, confirm_purchase",
+            "offers": (
+                "Merchant offers at GET /growth/offers?product_id=...; present a mandate_token "
+                "and offers are fitted to what you are allowed to spend"
+            ),
         },
         "start_here": {
             "feed": "/catalog/feed",
             "search": "/catalog/search?q=wireless+mouse+under+1500",
             "issue_mandate": "POST /mandate/issue",
+            "offers": "/growth/offers?product_id=prod_elec_001",
             "raise_intent": "POST /intents",
             "guardrails": "/policy/config",
             "audit_trail": "/audit/events",
