@@ -6,14 +6,16 @@ deliberate: it proves the API is genuinely the interface an outside agent uses,
 and it matches how a merchant would actually ship this (the merchant runs the
 API; the MCP server is the connector a buyer installs).
 
-Four tools, mirroring the spec:
+Eight tools. The four that matter:
 
     search_catalog          discover products
-    get_product             price and inspect one
+    get_offers              what the merchant will offer *you* -- present a
+                            mandate and offers are fitted to what you may spend
     create_purchase_intent  ask permission to buy (runs every guardrail)
     confirm_purchase        pay for an approved intent
 
-Two more make an agent's life easier: `get_merchant_info` and `check_mandate`.
+Four more make an agent's life easier: `get_merchant_info`, `get_product`,
+`check_mandate` and `check_intent`.
 
 Run it:
     python -m app.mcp_server                # stdio, for Claude Desktop et al.
