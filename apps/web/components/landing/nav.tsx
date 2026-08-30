@@ -61,7 +61,7 @@ export function Nav() {
         {/* Right CTA Actions */}
         <div className="flex items-center gap-4">
           <a
-            href="https://github.com/Ankit-Basu/AgentMandi"
+            href="https://github.com/Ankit-Basu/Vyapaar"
             target="_blank"
             rel="noreferrer"
             className="grid size-8 place-items-center text-[#b89a8e] transition hover:text-[#e5e2e3]"

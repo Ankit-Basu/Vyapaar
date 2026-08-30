@@ -570,7 +570,7 @@ export function Cta() {
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
-            href="https://github.com/Ankit-Basu/AgentMandi"
+            href="https://github.com/Ankit-Basu/Vyapaar"
             target="_blank"
             rel="noreferrer"
             className="glass-flat inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[14px] font-medium text-mute-200 transition-colors hover:text-white"
