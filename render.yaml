@@ -1,0 +1,54 @@
+# Render blueprint for the Vyapaar API.
+#
+# The web app goes to Vercel separately — see docs/DEPLOY.md. Only the API needs
+# a long-lived process, because `/audit/stream` is Server-Sent Events and wants a
+# connection that stays open rather than a serverless invocation that does not.
+#
+# Deploy this first: the web app needs the API's URL, and the API needs the web
+# app's origin for CORS, so the order is API -> web -> set CORS_ORIGINS.
+
+services:
+  - type: web
+    name: vyapaar-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      # Anyone holding this can mint spending authority, so it is generated on
+      # the platform and never committed. Rotating it invalidates every mandate
+      # already issued, which is the correct behaviour.
+      - key: MANDATE_JWT_SECRET
+        generateValue: true
+
+      # Set after the web app is deployed — Render will prompt for it. Comma
+      # separated, no trailing slash, e.g. https://vyapaar.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+
+      - key: VYAPAAR_ENV
+        value: production
+
+      # SQLite on the container's own disk. The service seeds a working merchant
+      # on every boot, so a restart returns to a clean demo rather than a broken
+      # one. No persistent volume is needed, and the free plan has none.
+      - key: DATABASE_PATH
+        value: /app/data/vyapaar.db
+
+      # Leave on the simulator unless you have also exposed a webhook URL that
+      # Razorpay can reach. With real keys the simulator disables itself and
+      # nothing settles until a signed webhook arrives — a demo would stall at
+      # AWAITING_PAYMENT. The simulator signs with the same HMAC-SHA256, so the
+      # verification path is exercised either way.
+      - key: PAYMENTS_MODE
+        value: simulated
+
+      # No key configured means the deterministic planner, which is what makes
+      # the hosted demo reproducible. Set GROQ_API_KEY here to use an LLM.
+      - key: LLM_PROVIDER
+        value: auto
+
+      - key: EMBEDDINGS_BACKEND
+        value: hashing

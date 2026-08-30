@@ -1,0 +1,34 @@
+# The API image needs `services/api` and `seed`, and nothing else. Everything
+# below either cannot work in the image or would bloat it.
+
+.git
+.github
+node_modules
+apps
+packages
+.next
+out
+.venv
+venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Local state — the container seeds its own on boot.
+data
+*.db
+*.db-wal
+*.db-shm
+
+# Secrets. Configuration comes from the host's environment, never from a file
+# baked into a public image.
+.env
+.env.local
+.env.*.local
+
+docs
+*.md
+!services/api/**/*.md

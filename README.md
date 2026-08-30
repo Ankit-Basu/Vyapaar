@@ -18,7 +18,7 @@
 
 <br/>
 
-**[Quickstart](#-quickstart) · [Two gauntlets](#-two-gauntlets-one-shape) · [Demo script](docs/DEMO_FLOW.md) · [Project & challenges](docs/PROJECT.md) · [Video pitch](docs/VIDEO_PITCH.md)**
+**[Quickstart](#-quickstart) · [Two gauntlets](#-two-gauntlets-one-shape) · [Demo script](docs/DEMO_FLOW.md) · [Project & challenges](docs/PROJECT.md) · [Video pitch](docs/VIDEO_PITCH.md) · [Deploy](docs/DEPLOY.md)**
 
 </div>
 
@@ -266,6 +266,8 @@ npm install && npm run dev
 
 Then follow **[docs/DEMO_FLOW.md](docs/DEMO_FLOW.md)**, which walks the whole product in about six minutes.
 
+To put it somewhere a judge can click instead, see **[docs/DEPLOY.md](docs/DEPLOY.md)** — the API ships as a container and the web app goes to Vercel.
+
 <br/>
 
 ---
@@ -350,10 +352,13 @@ Vyapaar/
 │
 ├── packages/shared-types/          Zod mirrors of the Pydantic models
 ├── seed/                           33 products · 11 scenarios
+├── Dockerfile                      API image; preserves the repo's path depth
+├── render.yaml                     Render blueprint for the API
 └── docs/
     ├── DEMO_FLOW.md                How to run and narrate the whole product
     ├── PROJECT.md                  Objectives, features, obstacles hit
-    └── VIDEO_PITCH.md              Shot-by-shot script for the demo video
+    ├── VIDEO_PITCH.md              Shot-by-shot script for the demo video
+    └── DEPLOY.md                   Render + Vercel, in the order that works
 ```
 
 <br/>
