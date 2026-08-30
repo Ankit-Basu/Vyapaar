@@ -332,7 +332,28 @@ export default function Dashboard() {
 
   return (
     <div className="relative min-h-dvh p-4 lg:flex lg:gap-6 lg:p-6 bg-[#0e0e0f] text-[#e5e2e3]">
-      <MoltenBackground opacity={0.4} speed={0.15} scale={5} />
+      {/*
+       * The control room runs the field cheap on purpose.
+       *
+       * This screen carries roughly twice its own viewport in `backdrop-filter`
+       * area — the rail, the header, and every panel. Blurred backdrops have to
+       * be recomputed whenever what is behind them repaints, so an uncapped
+       * shader makes the compositor re-blur two screens sixty times a second for
+       * a field that is 40% opaque behind a vignette.
+       *
+       * Capping it at 20fps is invisible at this drift speed and buys back two
+       * thirds of that. 1x pixels and two octaves cut the shader's own cost on
+       * top. No pointer tracking either: nothing on this screen reacts to it.
+       */}
+      <MoltenBackground
+        opacity={0.4}
+        speed={0.12}
+        scale={5}
+        detail={2}
+        dpr={1}
+        fps={20}
+        mouseStrength={0}
+      />
 
       {/* The rail holds still while the page scrolls past it. */}
       <div className="mb-4 lg:sticky lg:top-6 lg:mb-0 lg:h-[calc(100dvh-3rem)]">
@@ -350,9 +371,9 @@ export default function Dashboard() {
 
       <main className="min-w-0 flex-1">
         <header className="rounded-2xl border border-[#ffb77b]/20 bg-[#141416]/90 px-6 py-5 shadow-xl backdrop-blur-xl transition-all">
-          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-5">
+          <div className="flex items-start justify-between gap-6">
             <div className="min-w-0">
-              <p className="flex items-center gap-2 font-mono text-[11px] font-medium tracking-[0.2em] text-[#ffb77b] uppercase">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] font-medium tracking-[0.2em] text-[#ffb77b] uppercase">
                 <Today />
                 <span aria-hidden>·</span>
                 <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
@@ -365,7 +386,7 @@ export default function Dashboard() {
                   {offline ? "API unreachable" : connection === "live" ? "streaming" : connection}
                 </span>
               </p>
-              <h1 className="font-serif mt-2.5 text-[clamp(2rem,3.2vw,2.6rem)] leading-[1.02] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
+              <h1 className="font-serif mt-2.5 text-[clamp(1.75rem,3.2vw,2.6rem)] leading-[1.02] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
                 {meta.title}{" "}
                 <span className="bg-gradient-to-r from-[#ffd0a8] via-[#ffb77b] to-[#b16d2e] bg-clip-text text-transparent">
                   {meta.accent}
@@ -376,8 +397,12 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <RunConfig health={health} offline={offline} />
+            {/* Chain integrity is a verdict on the whole room, so it anchors the
+                top-right corner rather than riding above the configuration. */}
+            <ChainBadge health={health} offline={offline} />
           </div>
+
+          <RunConfig health={health} offline={offline} />
         </header>
 
         <div className="mt-6">
@@ -412,41 +437,52 @@ function Today() {
   return <>{label}</>;
 }
 
-/** The run's configuration and integrity, aligned to the right of the title. */
-function RunConfig({ health, offline }: { health: Health | null; offline: boolean }) {
+/**
+ * Whether the audit chain still verifies — the one badge that describes the room
+ * as a whole rather than one panel, so it sits in the header's top-right corner.
+ */
+function ChainBadge({ health, offline }: { health: Health | null; offline: boolean }) {
   if (offline) {
     return (
-      <span className="flex items-center gap-2 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-2 text-[12px] font-medium text-fail-500">
+      <span className="flex shrink-0 items-center gap-2 rounded-xl border border-fail-500/30 bg-fail-bg/60 px-3 py-2 text-[12px] font-medium text-fail-500">
         <CircleAlert size={13} />
-        API unreachable at {API_BASE}
+        <span className="hidden sm:inline">API unreachable at {API_BASE}</span>
+        <span className="sm:hidden">offline</span>
       </span>
     );
   }
   if (!health) return null;
 
   return (
-    <div className="flex flex-col items-start gap-3 sm:items-end">
-      <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold",
-            health.audit_chain_valid
-              ? "border-pass-500/30 bg-pass-bg/60 text-pass-500"
-              : "border-fail-500/30 bg-fail-bg/60 text-fail-500",
-          )}
-          title={`${health.audit_events} events recorded since the last reset`}
-        >
-          <ShieldCheck size={13} />
-          {health.audit_chain_valid ? "chain intact" : "chain broken"}
-        </span>
-        {health.warnings.map((warning) => (
-          <Badge key={warning} tone="gate" title={warning}>
-            dev secret
-          </Badge>
-        ))}
-      </div>
+    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+      {health.warnings.map((warning) => (
+        <Badge key={warning} tone="gate" title={warning}>
+          dev secret
+        </Badge>
+      ))}
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold",
+          health.audit_chain_valid
+            ? "border-pass-500/30 bg-pass-bg/60 text-pass-500"
+            : "border-fail-500/30 bg-fail-bg/60 text-fail-500",
+        )}
+        title={`${health.audit_events} events recorded since the last reset`}
+      >
+        <ShieldCheck size={13} />
+        {health.audit_chain_valid ? "chain intact" : "chain broken"}
+      </span>
+    </div>
+  );
+}
 
-      <div className="flex flex-wrap items-stretch divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-white/[0.02]">
+/** How this run is configured, on its own rule-separated row under the title. */
+function RunConfig({ health, offline }: { health: Health | null; offline: boolean }) {
+  if (offline || !health) return null;
+
+  return (
+    <div className="mt-5 border-t border-white/[0.07] pt-4">
+      <div className="flex w-fit max-w-full flex-wrap items-stretch divide-x divide-white/[0.07] overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]">
         <Chip
           icon={CreditCard}
           label="payments"

@@ -161,6 +161,25 @@ export interface MoltenMetalProps {
   speed?: number;
   scale?: number;
   detail?: number;
+  /**
+   * Device-pixel ratio ceiling for the render target.
+   *
+   * Fragment cost is quadratic in this. The hero wants 2 because it is the
+   * subject; a background sitting at 40% opacity behind a vignette and a pane of
+   * frosted glass does not — at that point 1 is indistinguishable and costs a
+   * quarter as much per frame.
+   */
+  dpr?: number;
+  /**
+   * Cap the field's frame rate. 0 leaves it uncapped.
+   *
+   * This is the single biggest lever when the field sits *behind* glass. Every
+   * frame it repaints invalidates every `backdrop-filter` in front of it, and a
+   * dense screen can easily carry more blurred area than it has viewport. The
+   * field itself drifts slowly enough that 20fps is indistinguishable from 60 —
+   * so the cap buys back two thirds of that compositing work for nothing.
+   */
+  fps?: number;
   glow?: number;
   coreSize?: number;
   swirl?: number;
@@ -186,6 +205,8 @@ export default function MoltenMetal({
   speed = 0.35,
   scale = 4,
   detail = 3,
+  dpr = 2,
+  fps = 0,
   glow = 1.6,
   coreSize = 0.1,
   swirl = 1,
@@ -216,7 +237,7 @@ export default function MoltenMetal({
         alpha: true,
         premultipliedAlpha: true,
         antialias: false,
-        dpr: Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2),
+        dpr: Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, dpr),
       });
     } catch {
       return;
@@ -335,15 +356,31 @@ export default function MoltenMetal({
       targetMouse[0] = 0.5;
       targetMouse[1] = 0.5;
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseleave", handleMouseLeave);
+    // Only listen when the shader will actually use it. The uniform was already
+    // gated on `mouseInteraction`, but the listeners were not -- so a background
+    // that ignores the pointer was still doing a getBoundingClientRect on every
+    // mousemove across the whole window.
+    if (mouseInteraction) {
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+      window.addEventListener("mouseleave", handleMouseLeave);
+    }
 
     let raf = 0;
     let isVisible = true;
     let isPageVisible = !document.hidden;
     const t0 = performance.now();
 
+    const minFrameMs = fps > 0 ? 1000 / fps : 0;
+    let lastRender = 0;
+
     const loop = (t: number) => {
+      raf = requestAnimationFrame(loop);
+      // The rAF keeps ticking so the cap stays aligned to the compositor's
+      // rhythm; what is skipped is the draw, and with it every backdrop-filter
+      // recomputation that a repaint of the backdrop would have forced.
+      if (minFrameMs && t - lastRender < minFrameMs) return;
+      lastRender = t;
+
       program.uniforms.iTime.value = (t - t0) * 0.001;
       currentMouse[0] += 0.05 * (targetMouse[0] - currentMouse[0]);
       currentMouse[1] += 0.05 * (targetMouse[1] - currentMouse[1]);
@@ -351,7 +388,6 @@ export default function MoltenMetal({
       m[0] = currentMouse[0];
       m[1] = currentMouse[1];
       renderer.render({ scene: mesh });
-      raf = requestAnimationFrame(loop);
     };
 
     const tryStart = () => {
@@ -389,8 +425,10 @@ export default function MoltenMetal({
       io.disconnect();
       themeObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseleave", handleMouseLeave);
+      if (mouseInteraction) {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseleave", handleMouseLeave);
+      }
       ctxMap.delete(container);
       if (canvas.parentNode === container) container.removeChild(canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();

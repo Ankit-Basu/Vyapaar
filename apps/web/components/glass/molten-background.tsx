@@ -7,6 +7,12 @@ type Props = {
   speed?: number;
   scale?: number;
   mouseStrength?: number;
+  /** Fractal octaves. Fewer is cheaper and barely visible once the field is dimmed. */
+  detail?: number;
+  /** Device-pixel-ratio ceiling. See MoltenMetal — fragment cost is quadratic in this. */
+  dpr?: number;
+  /** Frame-rate cap. Matters most on screens with a lot of glass in front. */
+  fps?: number;
   /**
    * Run the WebGL field at all.
    *
@@ -24,6 +30,9 @@ export function MoltenBackground({
   speed = 0.35,
   scale = 3.8,
   mouseStrength = 0.35,
+  detail = 3,
+  dpr = 2,
+  fps = 0,
   shader = true,
   className,
 }: Props) {
@@ -40,7 +49,9 @@ export function MoltenBackground({
         color3="#ffd0a8"
         speed={speed}
         scale={scale}
-        detail={3}
+        detail={detail}
+        dpr={dpr}
+        fps={fps}
         glow={1.8}
         coreSize={0.1}
         swirl={1}
@@ -50,7 +61,7 @@ export function MoltenBackground({
         colorMode="molten"
         grain
         grainIntensity={0.04}
-        mouseInteraction
+        mouseInteraction={mouseStrength > 0}
         mouseStrength={mouseStrength}
         opacity={opacity}
         backgroundColor="#0e0e0f"
