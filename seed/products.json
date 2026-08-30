@@ -1,5 +1,5 @@
 {
-  "schema_version": "agentmandi.catalog.v1",
+  "schema_version": "vyapaar.catalog.v1",
   "merchant_id": "merch_kirana_labs",
   "merchant_name": "Kirana Labs Pvt Ltd",
   "currency": "INR",
