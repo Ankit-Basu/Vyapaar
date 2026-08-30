@@ -38,7 +38,7 @@ from .embeddings import (
     tokenize,
 )
 
-log = logging.getLogger("agentmandi.catalog")
+log = logging.getLogger("vyapaar.catalog")
 
 BM25_K1 = 1.5
 BM25_B = 0.75

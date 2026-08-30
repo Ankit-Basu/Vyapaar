@@ -22,6 +22,10 @@ from ..audit import log as audit
 from ..catalog import store as catalog
 from ..config import REPO_ROOT, get_settings
 from ..db import reset_db
+from ..growth import attribution
+from ..growth import campaigns as growth_campaigns
+from ..growth import economics as growth_economics
+from ..growth import service as growth
 from ..intents import service as intents
 from ..mandate import service as mandates
 from ..models import (
@@ -32,7 +36,7 @@ from ..models import (
 )
 from ..payments import service as payments
 
-log = logging.getLogger("agentmandi.demo")
+log = logging.getLogger("vyapaar.demo")
 router = APIRouter(prefix="/demo", tags=["demo"])
 
 SCENARIOS_PATH = REPO_ROOT / "seed" / "scenarios.json"
@@ -45,6 +49,7 @@ KEYBOARD = "prod_elec_003"
 WIRELESS_KEYBOARD = "prod_elec_004"
 VERTICAL_MOUSE = "prod_elec_011"
 YOGA_MAT = "prod_fit_001"
+CHAIR = "prod_offc_005"
 
 
 class ScenarioResult(Base):
@@ -382,6 +387,154 @@ def _scenario_forged_mandate(spec: dict[str, Any]) -> ScenarioResult:
     )
 
 
+
+# --------------------------------------------------------------------------
+# Growth scenarios -- the merchant's side of the counter
+# --------------------------------------------------------------------------
+
+
+def _scenario_offer_accepted(spec: dict[str, Any]) -> ScenarioResult:
+    """The agent shops, the merchant offers, and the agent judges each offer."""
+    token, mandate_id = _issue(spec, "demo: offer accepted")
+    catalog.set_stock(MOUSE, 42)
+    catalog.set_stock(VERTICAL_MOUSE, 18)
+    run = _run_agent("buy a wireless mouse", token)
+
+    considered = next(
+        (step for step in run["steps"] if step["action"] == "consider_offers"), None
+    )
+    metrics = attribution.revenue_metrics()
+    accepted = (considered or {}).get("detail", {}).get("accepted_offer_id")
+
+    return ScenarioResult(
+        scenario_id=spec["id"],
+        title=spec["title"],
+        proves=spec["proves"],
+        outcome=run["outcome"],
+        summary=(
+            f"{run['message']} The agent weighed "
+            f"{len((considered or {}).get('detail', {}).get('offers_considered', []))} offer(s) and "
+            f"{'accepted one' if accepted else 'declined them all'}. "
+            f"Revenue uplift so far: {_inr(metrics.uplift_paise)} on "
+            f"{_inr(metrics.baseline_gmv_paise)} of baseline."
+        ),
+        mandate_id=mandate_id,
+        mandate_token=token,
+        steps=[run, {"revenue_metrics": metrics.model_dump()}],
+        audit_tail=_audit_tail(),
+    )
+
+
+def _scenario_offer_refused_by_mandate(spec: dict[str, Any]) -> ScenarioResult:
+    """Same product, two mandates. The tight one is offered less, on purpose."""
+    tight_token, tight_id = _issue(spec, "demo: tight mandate")
+    catalog.set_stock(MOUSE, 42)
+
+    tight_mandate = mandates.get_record(tight_id)
+    fitted = growth.quote_offers(MOUSE, tight_mandate)
+    unfitted = growth.quote_offers(MOUSE, None)
+
+    refused = [w for w in fitted.withheld if w.get("failed_check") == "buyer_bounds"]
+    return ScenarioResult(
+        scenario_id=spec["id"],
+        title=spec["title"],
+        proves=spec["proves"],
+        outcome="suppressed" if refused else "published",
+        summary=(
+            f"Under a {_inr(tight_mandate.per_txn_cap_paise)} cap the merchant published "
+            f"{len(fitted.offers)} offer(s) and withheld {len(refused)} that the buyer could not "
+            f"have accepted. With no mandate presented, the same product yields "
+            f"{len(unfitted.offers)} offer(s). The merchant does not push what the mandate forbids."
+        ),
+        mandate_id=tight_id,
+        mandate_token=tight_token,
+        steps=[
+            {"fitted_to_mandate": fitted.model_dump()},
+            {"unfitted": unfitted.model_dump()},
+        ],
+        audit_tail=_audit_tail(),
+    )
+
+
+def _scenario_margin_floor_holds(spec: dict[str, Any]) -> ScenarioResult:
+    """Drive a product's cost up until a discount would breach the floor."""
+    token, mandate_id = _issue(spec, "demo: margin floor")
+    catalog.set_stock(MOUSE, 42)
+
+    product = catalog.get_product(MOUSE)
+    original_cost = growth_economics.get_cost_paise(MOUSE)
+    # 96% of list leaves 4% gross margin: any discount at all breaches an 8% floor.
+    growth_economics.set_cost_paise(MOUSE, int(product.price_paise * 0.96))
+
+    listing = growth.quote_offers(MOUSE)
+    refused = [w for w in listing.withheld if w.get("failed_check") == "margin_floor"]
+    metrics = attribution.revenue_metrics()
+
+    if original_cost is not None:
+        growth_economics.set_cost_paise(MOUSE, original_cost)
+
+    return ScenarioResult(
+        scenario_id=spec["id"],
+        title=spec["title"],
+        proves=spec["proves"],
+        outcome="suppressed" if refused else "published",
+        summary=(
+            f"With {product.title} carrying only 4% gross margin, the gauntlet refused "
+            f"{len(refused)} offer(s) on the margin floor and published {len(listing.offers)}. "
+            f"Margin protected across the run: {_inr(metrics.margin_protected_paise)}."
+        ),
+        mandate_id=mandate_id,
+        mandate_token=token,
+        steps=[{"offers": listing.model_dump()}, {"revenue_metrics": metrics.model_dump()}],
+        audit_tail=_audit_tail(),
+    )
+
+
+def _scenario_deep_discount_gate(spec: dict[str, Any]) -> ScenarioResult:
+    """A discount big enough to need a person, held rather than refused."""
+    token, mandate_id = _issue(spec, "demo: deep discount")
+    catalog.set_stock(CHAIR, 12)
+
+    listing = growth.quote_offers(CHAIR)
+    gated = [w for w in listing.withheld if w.get("failed_check") == "deep_discount_gate"]
+    campaign = growth_campaigns.active_campaign()
+
+    steps: list[dict[str, Any]] = [{"offers": listing.model_dump()}]
+    if gated:
+        stored = growth.get_offer(gated[0]["offer_id"], include_margin=True)
+        steps.append(
+            {
+                "held": {
+                    "offer_id": stored.offer.offer_id,
+                    "status": stored.offer.status.value,
+                    "discount_paise": stored.offer.discount_paise,
+                    "campaign_reserved_paise": campaign.discount_reserved_paise if campaign else 0,
+                    "checks": [c.model_dump() for c in stored.decision.checks],
+                }
+            }
+        )
+
+    return ScenarioResult(
+        scenario_id=spec["id"],
+        title=spec["title"],
+        proves=spec["proves"],
+        outcome="gated" if gated else "published",
+        summary=(
+            f"A bundle on the desk chair gives away "
+            f"{_inr(gated[0].get('discount_paise', 0)) if gated and gated[0].get('discount_paise') else 'more than the threshold'}"
+            f", so it is held for a person rather than suppressed. "
+            f"The campaign is holding {_inr(campaign.discount_reserved_paise) if campaign else 'nothing'} "
+            "while the decision is pending. Approve it from the Offer ledger."
+        )
+        if gated
+        else "The chair's bundle cleared without needing a human this time.",
+        mandate_id=mandate_id,
+        mandate_token=token,
+        steps=steps,
+        audit_tail=_audit_tail(),
+    )
+
+
 RUNNERS = {
     "happy_path": _scenario_happy_path,
     "budget_exceeded": _scenario_budget_exceeded,
@@ -390,6 +543,10 @@ RUNNERS = {
     "out_of_stock": _scenario_out_of_stock,
     "payment_failure": _scenario_payment_failure,
     "forged_mandate": _scenario_forged_mandate,
+    "offer_accepted": _scenario_offer_accepted,
+    "offer_refused_by_mandate": _scenario_offer_refused_by_mandate,
+    "margin_floor_holds": _scenario_margin_floor_holds,
+    "deep_discount_gate": _scenario_deep_discount_gate,
 }
 
 
@@ -427,6 +584,10 @@ def reset() -> dict:
     """Fresh database, fresh catalog, empty audit trail. Run before a demo."""
     reset_db()
     result = catalog.ingest_seed_file()
+    # Costs and the campaign are part of a working merchant, not demo garnish: a
+    # reset that dropped them would leave the growth agent unable to offer anything.
+    growth_economics.seed_economics()
+    growth_campaigns.ensure_default_campaign()
     audit.record(
         actor="operator",
         event_type="demo.reset",

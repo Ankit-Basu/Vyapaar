@@ -18,38 +18,46 @@ const CHECKS = [
     reason: "A mandate is not transferable between merchants.",
   },
   {
-    id: "product_exists",
+    id: "offer_honoured",
     num: 3,
+    name: "Any accepted offer still stands",
+    reason:
+        "If the buyer took a merchant offer, it is re-priced against the live catalog. " +
+        "The merchant may make an offer; it may not change one already accepted.",
+  },
+  {
+    id: "product_exists",
+    num: 4,
     name: "Product exists, and the price is the merchant's",
     reason: "₹1,299 × 1 matches the catalog. An agent cannot name its own price.",
   },
   {
     id: "category_allowed",
-    num: 4,
+    num: 5,
     name: "Category is inside the mandate allow-list",
     reason: "'electronics' was authorised by the buyer. 'fitness' would not be.",
   },
   {
     id: "per_txn_cap",
-    num: 5,
+    num: 6,
     name: "Amount is within the per-transaction cap",
     reason: "₹1,299 sits inside the ₹3,000 ceiling on any single purchase.",
   },
   {
     id: "budget_remaining",
-    num: 6,
+    num: 7,
     name: "The mandate has enough budget left",
     reason: "Budget minus spend minus money already held for in-flight purchases.",
   },
   {
     id: "stock_available",
-    num: 7,
+    num: 8,
     name: "The merchant can actually fulfil it",
     reason: "42 in stock. Charging for something unshippable is not allowed.",
   },
   {
     id: "high_value_gate",
-    num: 8,
+    num: 9,
     name: "High-value purchases need a human",
     reason: "₹1,299 is below the ₹5,000 threshold, so the agent may proceed alone.",
   },
@@ -81,8 +89,15 @@ export function GuardrailScene() {
         .to(".gr-rail-fill", { scaleY: 1, duration: 2.4, ease: "none" }, 0.1);
 
       // Light up each check one by one on mouse scroll
+      // Derived from the list rather than hard-coded, so adding a check to the
+      // gauntlet re-times the scene instead of running the last node past the
+      // end of the rail.
+      const RAIL_START = 0.2;
+      const RAIL_SPAN = 2.2;
+      const step = RAIL_SPAN / Math.max(1, rows.length);
+
       rows.forEach((row, i) => {
-        const at = 0.2 + i * 0.28;
+        const at = RAIL_START + i * step;
         tl.to(
           row,
           {
@@ -132,7 +147,7 @@ export function GuardrailScene() {
           <div className="lg:sticky lg:top-24">
             <Eyebrow index="03">The guardrail engine</Eyebrow>
             <h2 className="font-serif mt-5 text-[clamp(2.2rem,4vw,3.3rem)] leading-[0.95] font-normal italic text-[#f5f3f0] tracking-[-0.02em]">
-              Eight checks stand between
+              Nine checks stand between
               <br />
               <span className="bg-gradient-to-r from-[#ffd0a8] via-[#ffb77b] to-[#b16d2e] bg-clip-text text-transparent">
                 an agent and your money.
@@ -211,7 +226,7 @@ export function GuardrailScene() {
             <div className="gr-verdict mt-8 flex items-center gap-3 rounded-xl border border-[#34d399]/30 bg-[#34d399]/[0.08] px-4 py-3.5 shadow-lg opacity-0">
               <ShieldCheck size={18} className="shrink-0 text-[#34d399]" />
               <p className="text-[13px] leading-relaxed text-[#e5e2e3]">
-                All eight passed. Only now may the payment service open a Razorpay order — and
+                All nine passed. Only now may the payment service open a Razorpay order — and
                 the purchase still will not settle until a webhook arrives whose signature
                 verifies.
               </p>

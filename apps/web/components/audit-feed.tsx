@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPaise, type AuditEvent } from "@agentmandi/shared-types";
+import { formatPaise, type AuditEvent } from "@vyapaar/shared-types";
 import { AlertTriangle, Link2, Radio, ScrollText, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 

@@ -1,5 +1,5 @@
 {
-  "name": "agentmandi",
+  "name": "vyapaar",
   "version": "0.1.0",
   "private": true,
   "description": "An agent commerce layer: makes a Razorpay test-mode merchant discoverable and transactable by an external AI buyer agent.",

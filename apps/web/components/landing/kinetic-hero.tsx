@@ -47,10 +47,22 @@ export function KineticHero() {
         className="pointer-events-none absolute inset-y-0 right-0 w-full md:w-3/5 select-none overflow-hidden z-0"
         aria-hidden="true"
       >
-        <img
-          src="/landing.gif"
-          alt=""
-          className="h-full w-full object-cover object-right"
+        {/*
+         * Was a 53 MB GIF. The same footage as h264 is 1.5 MB and decodes on the
+         * GPU instead of pegging a core, which is the difference between the hero
+         * appearing instantly and appearing eventually.
+         *
+         * `autoPlay muted loop playsInline` is the combination every browser needs
+         * before it will start a video without a tap; drop `muted` and iOS refuses.
+         */}
+        <video
+          src="/landing.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="h-full w-full object-cover object-right motion-reduce:hidden"
         />
         {/* Directional fade: allows the mesh to seamlessly blend into the dark canvas under the text */}
         <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#131314]/35 to-[#131314]" />
@@ -88,7 +100,7 @@ export function KineticHero() {
             />
           </div>
 
-          {/* Subtitle Tailored to AgentMandi */}
+          {/* Subtitle Tailored to Vyapaar */}
           <p className="kinetic-subtext mt-8 max-w-xl text-[15px] leading-relaxed text-[#c7b0a6] font-sans">
             A cryptographically guarded mandate layer for high-stakes AI commerce.
             Move beyond conversational chat and empower software agents to discover, negotiate,
@@ -115,7 +127,7 @@ export function KineticHero() {
           <div className="mt-12 flex flex-wrap items-center gap-6 border-t border-[#444748]/20 pt-6 font-mono text-[11px] text-[#b89a8e]">
             <div className="kinetic-trust-chip flex items-center gap-2">
               <Shield size={13} className="text-[#ffb77b]" />
-              <span>8-POINT GAUNTLET</span>
+              <span>9 + 9 GUARDRAILS</span>
             </div>
             <div className="kinetic-trust-chip flex items-center gap-2">
               <KeyRound size={13} className="text-[#ffb77b]" />

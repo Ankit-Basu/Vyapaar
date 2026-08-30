@@ -29,7 +29,7 @@ from typing import Any, Literal, Protocol
 
 from ..config import get_settings
 
-log = logging.getLogger("agentmandi.payments.gateway")
+log = logging.getLogger("vyapaar.payments.gateway")
 
 GatewayMode = Literal["live", "simulated"]
 
@@ -101,7 +101,7 @@ class LiveRazorpayGateway:
         if not settings.razorpay_configured:
             raise PaymentGatewayError("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required for live mode")
         self._client = razorpay.Client(auth=(settings.razorpay_key_id, settings.razorpay_key_secret))
-        self._client.set_app_details({"title": "AgentMandi", "version": "0.1.0"})
+        self._client.set_app_details({"title": "Vyapaar", "version": "0.1.0"})
 
     def create_order(self, *, amount_paise: int, receipt: str, notes: dict[str, str]) -> dict[str, Any]:
         try:
@@ -223,7 +223,7 @@ def build_webhook_event(
         contains.append("payment")
     return {
         "entity": "event",
-        "account_id": "acc_AgentMandiTest",
+        "account_id": "acc_VyapaarTest",
         "event": event,
         "contains": contains,
         "payload": payload,

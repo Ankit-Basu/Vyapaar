@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPaise, type AuditEvent } from "@agentmandi/shared-types";
+import { formatPaise, type AuditEvent } from "@vyapaar/shared-types";
 import {
   Activity,
   Gavel,
@@ -40,7 +40,7 @@ type PolicyCheckRow = { id: string; status: string; reason: string };
  */
 export function LiveMetrics({
   events = [],
-  connection = "closed",
+  connection = "offline",
 }: {
   events?: AuditEvent[];
   connection?: Connection;

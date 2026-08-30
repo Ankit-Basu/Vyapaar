@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPaise, type Decision, type PurchaseIntent } from "@agentmandi/shared-types";
+import { formatPaise, type Decision, type PurchaseIntent } from "@vyapaar/shared-types";
 import { Check, ChevronRight, CreditCard, ListChecks, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 

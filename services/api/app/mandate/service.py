@@ -38,7 +38,7 @@ from ..models import (
     utcnow,
 )
 
-log = logging.getLogger("agentmandi.mandate")
+log = logging.getLogger("vyapaar.mandate")
 
 
 class MandateError(Exception):

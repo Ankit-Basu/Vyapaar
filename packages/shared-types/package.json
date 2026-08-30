@@ -1,5 +1,5 @@
 {
-  "name": "@agentmandi/shared-types",
+  "name": "@vyapaar/shared-types",
   "version": "0.1.0",
   "private": true,
   "description": "Zod mirrors of the FastAPI Pydantic models. Money is always integer paise.",

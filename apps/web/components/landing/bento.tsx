@@ -47,7 +47,7 @@ export function Bento() {
         <Glass depth={2} className="h-full p-6 border border-[#ffb77b]/15 bg-[#141416]/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.6)] rounded-2xl">
           <TileHead
             icon={<Boxes size={14} />}
-            eyebrow="agentmandi.catalog.v1"
+            eyebrow="vyapaar.catalog.v1"
             title="Machine-Readable"
           />
           <p className="mt-2 mb-4 text-[13px] text-[#c7b0a6] leading-relaxed">

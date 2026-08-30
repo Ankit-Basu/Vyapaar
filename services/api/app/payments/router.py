@@ -70,7 +70,7 @@ def simulate_pay(payment_link_id: str, outcome: str = Query(default="success", p
 _CHECKOUT_PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AgentMandi test checkout</title>
+<title>Vyapaar test checkout</title>
 <style>
   :root {{ color-scheme: light dark; }}
   body {{ font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

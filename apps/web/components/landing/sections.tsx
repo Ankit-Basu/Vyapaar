@@ -4,10 +4,7 @@ import {
   ArrowRight,
   Ban,
   CalendarClock,
-  CheckCheck,
   CircleSlash,
-  IndianRupee,
-  Plug,
   RefreshCw,
   ShieldCheck,
   Tag,
@@ -15,12 +12,147 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef, type CSSProperties } from "react";
+import { useRef } from "react";
 
 import { cn } from "@/lib/utils";
 import { EASE, Eyebrow, Reveal, Section, gsap, useScene } from "@/components/landing/motion";
 import { Bento } from "@/components/landing/bento";
 import { Mark } from "@/components/brand";
+
+/* ------------------------------------------------------------- stat strip --- */
+
+/**
+ * The proof strip.
+ *
+ * Sits directly under the hero because the claim above it is large, and a reader
+ * arriving cold deserves the countable version immediately. Every number here is
+ * checkable in the repo: the two gauntlets are `ORDERED_CHECKS` in their
+ * respective engines, and the test count is what `pytest` reports.
+ */
+const STATS: { value: string; label: string; detail: string }[] = [
+  { value: "9 + 9", label: "guardrails", detail: "one gauntlet each way across the counter" },
+  { value: "176", label: "tests", detail: "every check covered in isolation" },
+  { value: "SHA-256", label: "audit chain", detail: "append-only, enforced by the database" },
+  { value: "0", label: "rupees at risk", detail: "test mode, and the config refuses live keys" },
+];
+
+export function StatStrip() {
+  return (
+    <Section className="!py-14">
+      <Reveal>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] lg:grid-cols-4">
+          {STATS.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-[#131314] px-5 py-6 transition-colors hover:bg-[#17171a]"
+            >
+              <div className="font-display text-[clamp(1.6rem,2.6vw,2.1rem)] leading-none font-semibold tracking-[-0.03em] text-[#ffb77b]">
+                {stat.value}
+              </div>
+              <div className="mt-2 text-[13px] font-medium text-mute-200">{stat.label}</div>
+              <div className="mt-1 text-[12px] leading-relaxed text-mute-500">{stat.detail}</div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+    </Section>
+  );
+}
+
+/* ---------------------------------------------------------------- growth --- */
+
+/**
+ * The other half of the track.
+ *
+ * Everything above this section is defensive: bounding what an agent may spend.
+ * This is where the merchant stops being a vending machine and starts selling —
+ * under guardrails of its own, because a discount is a money action too.
+ */
+const SELL_SIDE = [
+  {
+    icon: Tag,
+    title: "It cannot lie about a saving",
+    body: "Every offer is re-priced against the live catalog before it is published. An inflated \u201cwas\u201d price does not reconcile, so the offer is never made. A machine buyer cannot smell a fake discount the way a person can, which makes proving it the merchant\u2019s job.",
+  },
+  {
+    icon: Wallet,
+    title: "It cannot sell below the floor",
+    body: "Cost price lives in a table the offer builder cannot read. The builder proposes the most persuasive offer it can; the margin gauntlet, which does see cost, decides whether the merchant can afford it. Growing revenue by selling at a loss is not growth.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "It cannot oversell your mandate",
+    body: "Present a mandate and the merchant fits its offers to what you are actually allowed to spend. An upsell above your per-transaction cap is never made \u2014 not blocked at checkout, never made. Pushing an agent at a purchase its principal forbade only manufactures a denial.",
+  },
+  {
+    icon: CalendarClock,
+    title: "It cannot give away more than authorised",
+    body: "A campaign is the merchant\u2019s own mandate: an envelope of discount with a margin floor under it and a human gate above it. Discount is held when an offer publishes and given away only once the payment clears \u2014 the same three-phase ledger the buyer\u2019s budget uses.",
+  },
+];
+
+export function Growth() {
+  return (
+    <Section id="growth">
+      <Reveal>
+        <Eyebrow index="04">The other side of the counter</Eyebrow>
+      </Reveal>
+      <Reveal stagger>
+        <h2 className="font-display mt-5 max-w-3xl text-[clamp(2rem,3.8vw,3.1rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
+          Bounding the buyer is half the job.
+          <span className="block text-mute-500">The merchant still has to earn the sale.</span>
+        </h2>
+        <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-mute-400">
+          So the merchant gets an agent too &mdash; one that builds bundles, volume tiers and
+          upgrades, and publishes them in a form an agent can verify rather than a banner a human
+          was meant to feel something about.
+        </p>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-mute-400">
+          A discount is a money action, so it clears its own gauntlet first:{" "}
+          <strong className="font-medium text-mute-100">nine ordered checks</strong>, the mirror of
+          the nine a purchase clears. Same shape, pointed the other way.
+        </p>
+      </Reveal>
+
+      <Reveal className="mt-14">
+        <div className="grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] sm:grid-cols-2">
+          {SELL_SIDE.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="bg-[#131314] p-6 transition-colors hover:bg-[#17171a]">
+              <span className="grid size-8 place-items-center rounded-lg bg-[#ffb77b]/12 text-[#ffb77b]">
+                <Icon size={15} />
+              </span>
+              <h3 className="mt-4 text-[15px] font-semibold text-mute-100">{title}</h3>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-mute-400">{body}</p>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* The number that exists only because refused offers are recorded, not dropped. */}
+      <Reveal className="mt-8">
+        <div className="flex flex-col gap-4 rounded-2xl border border-[#ffb77b]/22 bg-[#ffb77b]/[0.05] p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl">
+            <p className="text-[14px] font-semibold text-mute-100">
+              Every refusal is recorded, so the guardrails carry a price tag.
+            </p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-mute-400">
+              The control room reports <em>margin protected</em> &mdash; the discount the gauntlet
+              declined to give away &mdash; beside the revenue the offers earned. Both numbers come
+              off the same ledger.
+            </p>
+          </div>
+          <Link
+            href="/dashboard"
+            className="glass-flat inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-xl px-5 text-[13.5px] font-medium text-mute-100 transition-colors hover:text-white sm:self-auto"
+          >
+            See the revenue panel
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+      </Reveal>
+    </Section>
+  );
+}
 
 /* ---------------------------------------------------------------- problem --- */
 
@@ -131,7 +263,7 @@ export function Mandate() {
           <div className="scope-card glass-flat-strong rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-[11px] text-mute-500">
-                JWT · HS256 · agentmandi.mandate.v1
+                JWT · HS256 · vyapaar.mandate.v1
               </span>
               <span className="rounded-md bg-brand-glow px-2 py-0.5 text-[10px] font-bold tracking-wider text-brand-400 uppercase">
                 signed
@@ -381,7 +513,7 @@ export function Mcp() {
           <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-2.5">
             <Terminal size={12} className="text-mute-500" />
             <span className="font-mono text-[11px] text-mute-500">
-              claude desktop · agentmandi
+              claude desktop · vyapaar
             </span>
             <span className="ml-auto flex gap-1.5">
               <span className="size-2 rounded-full bg-white/10" />
@@ -438,7 +570,7 @@ export function Cta() {
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
-            href="https://github.com/Ankit-Basu/AgentMandi"
+            href="https://github.com/Ankit-Basu/Vyapaar"
             target="_blank"
             rel="noreferrer"
             className="glass-flat inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[14px] font-medium text-mute-200 transition-colors hover:text-white"
@@ -461,7 +593,7 @@ export function Footer() {
         <div className="flex items-center gap-2.5">
           <Mark className="size-6 text-[11px]" />
           <span className="text-[13px] text-mute-400">
-            AgentMandi — an agent commerce layer
+            Vyapaar — an agent commerce layer
           </span>
         </div>
         <p className="text-center text-[12px] text-mute-500 sm:text-right">

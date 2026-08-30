@@ -66,7 +66,7 @@ class ScoredProduct(Base):
 class CatalogFeedPage(Base):
     """ACP-style machine-readable product feed."""
 
-    schema_version: Literal["agentmandi.catalog.v1"] = "agentmandi.catalog.v1"
+    schema_version: Literal["vyapaar.catalog.v1"] = "vyapaar.catalog.v1"
     merchant_id: str
     merchant_name: str
     currency: Literal["INR"] = "INR"
@@ -216,7 +216,7 @@ class Decision(Base):
     reasons: list[str]
     checks: list[PolicyCheck]
     evaluated_at: str
-    policy_version: str = "agentmandi.policy.v1"
+    policy_version: str = "vyapaar.policy.v1"
 
     @property
     def allows_payment(self) -> bool:
@@ -229,6 +229,15 @@ class PurchaseIntentRequest(Base):
     qty: int = Field(default=1, ge=1)
     idempotency_key: str | None = Field(default=None, max_length=128)
     agent_rationale: str | None = Field(default=None, max_length=1000)
+    offer_id: str | None = Field(
+        default=None,
+        max_length=64,
+        description=(
+            "A merchant offer the agent chose to accept, from GET /growth/offers. Only the id "
+            "travels: the server re-fetches the offer and re-prices it, so nothing an agent "
+            "sends can change what the offer costs."
+        ),
+    )
 
 
 class PurchaseIntent(Base):
@@ -247,6 +256,11 @@ class PurchaseIntent(Base):
     created_at: str
     updated_at: str
     reserved_paise: int = 0
+    offer_id: str | None = None
+    # What the order would have cost at list, and what the offer took off it. Both
+    # zero on an ordinary purchase, which keeps the arithmetic honest either way.
+    list_amount_paise: int = 0
+    discount_paise: int = 0
 
 
 class PurchaseIntentResponse(Base):
@@ -331,3 +345,200 @@ class AuditChainVerification(Base):
     head_hash: str | None
     broken_at_seq: int | None = None
     detail: str
+
+
+# --------------------------------------------------------------------------
+# Growth: merchant-side offers, campaigns and the margin gauntlet
+# --------------------------------------------------------------------------
+#
+# The buy side above bounds what an *agent* may spend. This side bounds what the
+# *merchant* may give away. A discount is a money action too: it must be
+# explainable, bounded by a margin floor and a campaign budget, and gated when it
+# gets deep. The two gauntlets are deliberately the same shape.
+
+
+class OfferKind(str, Enum):
+    BUNDLE = "bundle"        # anchor + complement, priced below the sum of parts
+    VOLUME = "volume"        # unit price falls at a quantity threshold
+    UPGRADE = "upgrade"      # a better item in the same category, delta stated plainly
+
+
+class OfferStatus(str, Enum):
+    PUBLISHED = "PUBLISHED"    # cleared the gauntlet, visible to agents
+    GATED = "GATED"            # deep discount, waiting on a human
+    SUPPRESSED = "SUPPRESSED"  # a sell-side guardrail refused it
+    ACCEPTED = "ACCEPTED"      # a buyer agent took it
+    DECLINED = "DECLINED"      # a buyer agent looked and passed
+    EXPIRED = "EXPIRED"
+
+
+class OfferAction(str, Enum):
+    AUTO_PUBLISH = "auto_publish"
+    GATE_FOR_HUMAN = "gate_for_human"
+    SUPPRESS = "suppress"
+
+
+class OfferLine(Base):
+    """One item inside an offer, priced from the live catalog."""
+
+    product_id: str
+    title: str
+    category: str
+    qty: int = Field(ge=1)
+    unit_price_paise: int = Field(ge=0)
+    line_total_paise: int = Field(ge=0)
+    is_anchor: bool = False
+
+
+class OfferQuote(Base):
+    """A merchant offer in the shape a buying agent can evaluate without prose.
+
+    Every number an agent needs to decide is explicit. What is *not* here is
+    deliberate: `cost_paise` and the merchant's margin never cross this boundary.
+    An agent learns what it saves, never what the merchant keeps.
+    """
+
+    schema_version: Literal["vyapaar.offer.v1"] = "vyapaar.offer.v1"
+    offer_id: str
+    campaign_id: str
+    kind: OfferKind
+    anchor_product_id: str
+    lines: list[OfferLine]
+    list_total_paise: int = Field(ge=0, description="Sum of catalog prices, before the offer.")
+    offer_total_paise: int = Field(ge=0, description="What the buyer actually pays.")
+    discount_paise: int = Field(ge=0)
+    discount_bps: int = Field(ge=0, description="Basis points off list. 500 = 5%.")
+    headline: str
+    rationale: str = Field(description="Why the merchant is making this offer, machine-readable.")
+    disclosure: str = Field(description="Truthful statement of what changes if the agent accepts.")
+    expires_at: str
+    status: OfferStatus = OfferStatus.PUBLISHED
+
+
+class OfferCheck(Base):
+    """One sell-side guardrail evaluation. Mirrors `PolicyCheck` on the buy side."""
+
+    id: str
+    name: str
+    status: CheckStatus
+    reason: str
+    observed: dict[str, Any] = Field(default_factory=dict)
+
+
+class OfferDecision(Base):
+    action: OfferAction
+    reasons: list[str]
+    checks: list[OfferCheck]
+    evaluated_at: str
+    policy_version: str = "vyapaar.growth.v1"
+
+    @property
+    def publishable(self) -> bool:
+        return self.action == OfferAction.AUTO_PUBLISH
+
+
+class EvaluatedOffer(Base):
+    """An offer plus the gauntlet that judged it. This is what the dashboard renders."""
+
+    offer: OfferQuote
+    decision: OfferDecision
+    margin_paise: int | None = Field(
+        default=None,
+        description="Merchant-private. Populated on merchant views, null on agent-facing ones.",
+    )
+    margin_bps: int | None = None
+
+
+class Campaign(Base):
+    """The bounds a merchant's growth agent operates inside.
+
+    Same idea as a buyer's mandate, pointed the other way: a signed-off envelope of
+    discount the merchant is willing to spend, with a hard margin floor underneath.
+    """
+
+    campaign_id: str
+    name: str
+    merchant_id: str
+    status: Literal["ACTIVE", "PAUSED", "ENDED"] = "ACTIVE"
+    discount_budget_paise: int = Field(gt=0, description="Total discount the campaign may give away.")
+    discount_spent_paise: int = Field(default=0, ge=0)
+    discount_reserved_paise: int = Field(default=0, ge=0)
+    max_discount_bps: int = Field(gt=0, le=10000, description="Ceiling on any single offer.")
+    floor_margin_bps: int = Field(ge=0, le=10000, description="Margin the merchant will not sell below.")
+    deep_discount_gate_paise: int = Field(gt=0, description="Discounts at or above this need a human.")
+    allowed_categories: list[str]
+    created_at: str
+    updated_at: str
+
+    @property
+    def discount_available_paise(self) -> int:
+        return max(
+            0, self.discount_budget_paise - self.discount_spent_paise - self.discount_reserved_paise
+        )
+
+
+class CampaignCreateRequest(Base):
+    name: str = Field(min_length=1, max_length=200)
+    discount_budget_paise: int = Field(gt=0)
+    max_discount_bps: int = Field(default=1500, gt=0, le=10000)
+    floor_margin_bps: int = Field(default=1200, ge=0, le=10000)
+    deep_discount_gate_paise: int = Field(default=200000, gt=0)
+    allowed_categories: list[str] = Field(default_factory=list)
+
+
+class OfferListResponse(Base):
+    """Agent-facing. Suppressed offers are named, not hidden -- an agent that asked
+    deserves to know an offer existed and why it is not being made."""
+
+    schema_version: Literal["vyapaar.offers.v1"] = "vyapaar.offers.v1"
+    merchant_id: str
+    anchor_product_id: str
+    generated_at: str
+    mandate_aware: bool = Field(
+        description="True when the caller presented a mandate and offers were fitted to its bounds."
+    )
+    offers: list[OfferQuote]
+    withheld: list[dict[str, Any]] = Field(
+        default_factory=list, description="Offers the merchant's own guardrails refused, with reasons."
+    )
+
+
+class RevenueMetrics(Base):
+    """What the merchant actually got out of the growth agent."""
+
+    settled_gmv_paise: int
+    baseline_gmv_paise: int = Field(description="What the same intents would have been worth with no offer.")
+    uplift_paise: int
+    uplift_bps: int
+    orders: int
+    aov_paise: int
+    aov_without_offer_paise: int
+    aov_with_offer_paise: int
+    attach_rate_bps: int = Field(description="Share of settled orders that took an offer.")
+    discount_given_paise: int
+    margin_earned_paise: int
+    offers_published: int
+    offers_accepted: int
+    offers_declined: int
+    offers_suppressed: int
+    offers_gated: int
+    margin_protected_paise: int = Field(
+        description="Discount the gauntlet refused to give away. Money the merchant kept."
+    )
+
+
+class RebalanceMove(Base):
+    """One explainable change the campaign orchestrator made."""
+
+    product_id: str
+    title: str
+    action: Literal["promote", "withdraw", "hold"]
+    reason: str
+    observed: dict[str, Any] = Field(default_factory=dict)
+
+
+class RebalanceResult(Base):
+    campaign_id: str
+    evaluated: int
+    moves: list[RebalanceMove]
+    summary: str

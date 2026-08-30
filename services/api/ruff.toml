@@ -1,4 +1,4 @@
-# Lint config for the AgentMandi API.
+# Lint config for the Vyapaar API.
 line-length = 100
 
 [lint]

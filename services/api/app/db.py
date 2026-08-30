@@ -71,6 +71,9 @@ CREATE TABLE IF NOT EXISTS purchase_intent (
     reserved_paise    INTEGER NOT NULL DEFAULT 0,
     idempotency_key   TEXT,
     decision_json     TEXT,
+    offer_id          TEXT,
+    list_amount_paise INTEGER NOT NULL DEFAULT 0,
+    discount_paise    INTEGER NOT NULL DEFAULT 0,
     created_at        TEXT    NOT NULL,
     updated_at        TEXT    NOT NULL
 );
@@ -107,6 +110,60 @@ CREATE TABLE IF NOT EXISTS webhook_event (
     handled          INTEGER NOT NULL DEFAULT 0,
     raw_json         TEXT    NOT NULL
 );
+
+-- Merchant-private unit economics. Deliberately a separate table from `product`:
+-- cost price must never leak into the agent-facing catalog feed, and keeping it
+-- out of the Product model makes that a structural guarantee rather than a habit.
+CREATE TABLE IF NOT EXISTS product_economics (
+    product_id   TEXT PRIMARY KEY REFERENCES product(id),
+    cost_paise   INTEGER NOT NULL CHECK (cost_paise >= 0),
+    updated_at   TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS campaign (
+    campaign_id              TEXT PRIMARY KEY,
+    name                     TEXT    NOT NULL,
+    merchant_id              TEXT    NOT NULL,
+    status                   TEXT    NOT NULL DEFAULT 'ACTIVE',
+    discount_budget_paise    INTEGER NOT NULL CHECK (discount_budget_paise > 0),
+    discount_spent_paise     INTEGER NOT NULL DEFAULT 0 CHECK (discount_spent_paise >= 0),
+    discount_reserved_paise  INTEGER NOT NULL DEFAULT 0 CHECK (discount_reserved_paise >= 0),
+    max_discount_bps         INTEGER NOT NULL CHECK (max_discount_bps > 0),
+    floor_margin_bps         INTEGER NOT NULL CHECK (floor_margin_bps >= 0),
+    deep_discount_gate_paise INTEGER NOT NULL CHECK (deep_discount_gate_paise > 0),
+    allowed_categories_json  TEXT    NOT NULL DEFAULT '[]',
+    suppressed_json          TEXT    NOT NULL DEFAULT '[]',
+    created_at               TEXT    NOT NULL,
+    updated_at               TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS offer (
+    offer_id           TEXT PRIMARY KEY,
+    campaign_id        TEXT    NOT NULL REFERENCES campaign(campaign_id),
+    kind               TEXT    NOT NULL,
+    anchor_product_id  TEXT    NOT NULL,
+    lines_json         TEXT    NOT NULL DEFAULT '[]',
+    list_total_paise   INTEGER NOT NULL,
+    offer_total_paise  INTEGER NOT NULL,
+    discount_paise     INTEGER NOT NULL,
+    discount_bps       INTEGER NOT NULL,
+    baseline_paise     INTEGER NOT NULL DEFAULT 0,
+    margin_paise       INTEGER NOT NULL DEFAULT 0,
+    headline           TEXT    NOT NULL DEFAULT '',
+    rationale          TEXT    NOT NULL DEFAULT '',
+    disclosure         TEXT    NOT NULL DEFAULT '',
+    status             TEXT    NOT NULL,
+    decision_json      TEXT    NOT NULL DEFAULT '{}',
+    intent_id          TEXT,
+    buyer_id           TEXT,
+    reserved_paise     INTEGER NOT NULL DEFAULT 0,
+    expires_at         TEXT    NOT NULL,
+    created_at         TEXT    NOT NULL,
+    updated_at         TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_offer_campaign ON offer(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_offer_status   ON offer(status);
+CREATE INDEX IF NOT EXISTS idx_offer_intent   ON offer(intent_id);
 
 CREATE TABLE IF NOT EXISTS audit_log (
     seq           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -193,10 +250,28 @@ def transaction() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+# Columns added after the first release. `CREATE TABLE IF NOT EXISTS` will not add
+# them to a database that already exists, so they are applied by name on boot.
+MIGRATIONS: list[tuple[str, str, str]] = [
+    ("purchase_intent", "offer_id", "TEXT"),
+    ("purchase_intent", "list_amount_paise", "INTEGER NOT NULL DEFAULT 0"),
+    ("purchase_intent", "discount_paise", "INTEGER NOT NULL DEFAULT 0"),
+    ("offer", "baseline_paise", "INTEGER NOT NULL DEFAULT 0"),
+]
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    for table, column, ddl in MIGRATIONS:
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+
+
 def init_db() -> None:
     """Create the schema if it does not exist. Safe to call on every boot."""
     with connect() as conn:
         conn.executescript(SCHEMA)
+        _apply_migrations(conn)
 
 
 def reset_db() -> None:
@@ -208,6 +283,9 @@ def reset_db() -> None:
             DROP TRIGGER IF EXISTS audit_log_block_delete;
             DROP TABLE IF EXISTS audit_log;
             DROP TABLE IF EXISTS webhook_event;
+            DROP TABLE IF EXISTS offer;
+            DROP TABLE IF EXISTS campaign;
+            DROP TABLE IF EXISTS product_economics;
             DROP TABLE IF EXISTS payment;
             DROP TABLE IF EXISTS purchase_intent;
             DROP TABLE IF EXISTS mandate;

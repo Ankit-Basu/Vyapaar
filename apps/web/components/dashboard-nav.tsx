@@ -14,6 +14,8 @@ export type ViewId =
   | "agent"
   | "intents"
   | "mandates"
+  | "growth"
+  | "offers"
   | "audit"
   | "scenarios";
 

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
-import { AgentMandiLogo } from "@/components/logo";
+import { VyapaarLogo } from "@/components/logo";
 
 const LINKS = [
   { href: "#problem", label: "THE PROBLEM" },
   { href: "#guardrails", label: "GUARDRAILS" },
+  { href: "#growth", label: "GROWTH" },
   { href: "#audit", label: "AUDIT" },
   { href: "#mcp", label: "MCP" },
 ];
@@ -39,7 +40,7 @@ export function Nav() {
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-6 sm:px-10 text-[11px] tracking-[0.16em]">
         {/* Brand Logo */}
         <Link href="/" className="transition hover:opacity-90">
-          <AgentMandiLogo size={32} textClassName="text-lg sm:text-xl tracking-[0.16em]" />
+          <VyapaarLogo size={32} textClassName="text-lg sm:text-xl tracking-[0.16em]" />
         </Link>
 
         {/* Center Navigation Links */}
@@ -59,14 +60,8 @@ export function Nav() {
 
         {/* Right CTA Actions */}
         <div className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="text-[11px] font-semibold tracking-[0.18em] text-[#b89a8e] transition hover:text-[#ffb77b]"
-          >
-            LOGIN
-          </Link>
           <a
-            href="https://github.com/Ankit-Basu/AgentMandi"
+            href="https://github.com/Ankit-Basu/Vyapaar"
             target="_blank"
             rel="noreferrer"
             className="grid size-8 place-items-center text-[#b89a8e] transition hover:text-[#e5e2e3]"

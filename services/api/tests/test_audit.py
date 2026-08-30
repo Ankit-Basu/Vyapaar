@@ -10,6 +10,7 @@ from app.audit import log as audit
 from app.db import _database_file, connect
 from app.intents import service as intents
 from app.models import PurchaseIntentRequest
+from app.policy.engine import ORDERED_CHECKS
 
 from .conftest import MOUSE, YOGA_MAT
 
@@ -96,7 +97,7 @@ def test_a_denial_records_its_reason(mandate_token):
     assert decision_event.decision == "deny"
     assert "fitness" in decision_event.reasons[0]
     # Every check, including the skipped ones, is preserved for replay.
-    assert len(decision_event.payload["checks"]) == 8
+    assert len(decision_event.payload["checks"]) == len(ORDERED_CHECKS)
 
 
 def test_events_can_be_filtered_by_intent(mandate_token):

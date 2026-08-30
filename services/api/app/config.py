@@ -1,4 +1,4 @@
-"""Runtime configuration for the AgentMandi API.
+"""Runtime configuration for the Vyapaar API.
 
 Every secret comes from the environment. Nothing sensitive is ever hardcoded --
 see `.env.example` at the repo root for the full list.
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     )
 
     # --- service ---
-    environment: str = Field(default="local", alias="AGENTMANDI_ENV")
+    environment: str = Field(default="local", alias="VYAPAAR_ENV")
     api_host: str = Field(default="127.0.0.1", alias="API_HOST")
     api_port: int = Field(default=8000, alias="API_PORT")
     public_base_url: str = Field(default="http://127.0.0.1:8000", alias="PUBLIC_BASE_URL")
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
     # --- persistence ---
-    database_path: str = Field(default=str(REPO_ROOT / "data" / "agentmandi.db"), alias="DATABASE_PATH")
+    database_path: str = Field(default=str(REPO_ROOT / "data" / "vyapaar.db"), alias="DATABASE_PATH")
     seed_products_path: str = Field(default=str(REPO_ROOT / "seed" / "products.json"), alias="SEED_PRODUCTS_PATH")
     embeddings_backend: EmbeddingsBackend = Field(default="hashing", alias="EMBEDDINGS_BACKEND")
 
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # --- signed mandates (AP2-style consent tokens) ---
     mandate_jwt_secret: str = Field(default="dev-only-insecure-mandate-secret-change-me", alias="MANDATE_JWT_SECRET")
     mandate_jwt_algorithm: str = Field(default="HS256", alias="MANDATE_JWT_ALG")
-    mandate_issuer: str = Field(default="agentmandi.mandate.v1", alias="MANDATE_ISSUER")
+    mandate_issuer: str = Field(default="vyapaar.mandate.v1", alias="MANDATE_ISSUER")
     mandate_max_ttl_hours: int = Field(default=720, alias="MANDATE_MAX_TTL_HOURS")
 
     # --- guardrails ---
@@ -78,7 +78,7 @@ class Settings(BaseSettings):
         """Hard stop on live Razorpay credentials. This project never touches real money."""
         if v and not v.startswith("rzp_test_"):
             raise ValueError(
-                "AgentMandi refuses non-test Razorpay keys. RAZORPAY_KEY_ID must start with 'rzp_test_'."
+                "Vyapaar refuses non-test Razorpay keys. RAZORPAY_KEY_ID must start with 'rzp_test_'."
             )
         return v
 

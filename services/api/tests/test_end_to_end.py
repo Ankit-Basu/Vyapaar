@@ -11,6 +11,7 @@ from app.intents import service as intents
 from app.main import app
 from app.mandate import service as mandates
 from app.models import IntentStatus, MandateIssueRequest
+from app.policy.engine import ORDERED_CHECKS
 
 from .conftest import HEADPHONES, KEYBOARD, MOUSE, SILENT_MOUSE
 
@@ -225,7 +226,7 @@ def test_intent_decision_endpoint_lists_every_check(mandate_token):
         "/intents", json={"mandate_token": mandate_token, "product_id": MOUSE, "qty": 1}
     ).json()
     decision = client.get(f"/intents/{created['intent']['intent_id']}/decision").json()
-    assert len(decision["checks"]) == 8
+    assert len(decision["checks"]) == len(ORDERED_CHECKS)
     assert all(c["reason"] for c in decision["checks"])
 
 
@@ -273,6 +274,14 @@ def test_audit_endpoints_agree_with_each_other(mandate_token):
 
 
 def test_demo_scenarios_are_all_runnable():
+    """Every scenario in the seed file has a runner behind it.
+
+    The count is read from the registry rather than hard-coded, so adding a
+    scenario cannot leave a listed-but-unrunnable entry in the dashboard.
+    """
+    from app.demo.router import RUNNERS
+
     listing = client.get("/demo/scenarios").json()
-    assert listing["count"] == 7
+    assert listing["count"] == len(RUNNERS)
     assert all(s["runnable"] for s in listing["scenarios"])
+    assert {s["id"] for s in listing["scenarios"]} == set(RUNNERS)

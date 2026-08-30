@@ -23,7 +23,7 @@ import httpx
 
 from ..config import get_settings
 
-log = logging.getLogger("agentmandi.agent.llm")
+log = logging.getLogger("vyapaar.agent.llm")
 
 
 class LLMUnavailable(Exception):
