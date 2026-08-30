@@ -1,12 +1,12 @@
 {
-  "schema_version": "agentmandi.scenarios.v1",
+  "schema_version": "vyapaar.scenarios.v1",
   "note": "Deterministic demo runs. Each one resets nothing by itself; POST /demo/reset first for a clean trail.",
   "scenarios": [
     {
       "id": "happy_path",
       "title": "Agent discovers, prices and buys",
       "proves": "transactable end to end",
-      "narrative": "A buyer agent is handed a bounded mandate and the goal 'buy a wireless mouse under 1500'. It searches the machine-readable catalog, picks the Aurora Wireless Optical Mouse on a stated rationale, raises a purchase intent, clears all seven guardrails, opens a Razorpay order plus payment link, and settles on a signature-verified webhook.",
+      "narrative": "A buyer agent is handed a bounded mandate and the goal 'buy a wireless mouse under 1500'. It searches the machine-readable catalog, picks the Aurora Wireless Optical Mouse on a stated rationale, raises a purchase intent, clears all nine guardrails, opens a Razorpay order plus payment link, and settles on a signature-verified webhook.",
       "expected_outcome": "paid",
       "mandate": {
         "buyer_id": "buyer_asha",
@@ -149,6 +149,94 @@
       "watch_for": [
         "mandate_valid FAILs on the signature, not on the amount",
         "The rejected attempt still appears in the audit trail"
+      ]
+    },
+    {
+      "id": "offer_accepted",
+      "title": "Merchant upsells, agent takes the better product",
+      "proves": "revenue growth, bounded",
+      "narrative": "The agent picks a wireless mouse, then asks the merchant what it will offer. The growth agent proposes three things and the margin gauntlet judges each. The buyer agent declines the bundle and the volume tier -- it was asked for one mouse and has no authority to buy earphones or three units with its principal's money -- and takes the upgrade, because that is the same job done better with the merchant funding part of the step. Order value rises, and every rejected offer hands its discount back to the campaign.",
+      "expected_outcome": "paid",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "The consider_offers step lists every offer with an accept/decline reason",
+        "Declined offers release their discount hold back to the campaign",
+        "GET /growth/metrics shows uplift against the no-offer baseline",
+        "The intent records the product that actually shipped, not the one searched for"
+      ]
+    },
+    {
+      "id": "offer_refused_by_mandate",
+      "title": "Merchant refuses to oversell a tight mandate",
+      "proves": "budget-aware merchandising",
+      "narrative": "The same product, the same campaign, but the visiting agent carries a mandate capped at INR 1,500 per purchase. The merchant fits its offers to that bound: anything the buyer could not accept is never made. This is not a checkout-time block -- the offer does not exist. Pushing an agent at a purchase its principal forbade only manufactures a denial and wastes a round trip for both sides.",
+      "expected_outcome": "suppressed",
+      "mandate": {
+        "buyer_id": "buyer_tight",
+        "per_txn_cap_paise": 150000,
+        "total_budget_paise": 400000,
+        "allowed_categories": [
+          "electronics"
+        ],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "buyer_bounds is the failing check on the withheld offers",
+        "The same product under a roomier mandate publishes those offers",
+        "Suppressed offers hold no discount budget at all"
+      ]
+    },
+    {
+      "id": "margin_floor_holds",
+      "title": "The merchant refuses to discount below its floor",
+      "proves": "growth that does not cost margin",
+      "narrative": "Cost price is pushed up on a product until a discount would take it under the campaign's margin floor. The offer builder still proposes -- it cannot see cost, by design -- and the margin gauntlet refuses. The refusal is recorded rather than dropped, which is the only reason the control room can report margin protected as a real number.",
+      "expected_outcome": "suppressed",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 300000,
+        "total_budget_paise": 1000000,
+        "allowed_categories": [
+          "electronics",
+          "office"
+        ],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "margin_floor names the exact post-discount margin and the floor it missed",
+        "margin_protected_paise on GET /growth/metrics rises by the refused discount",
+        "The offer builder never imports the economics module"
+      ]
+    },
+    {
+      "id": "deep_discount_gate",
+      "title": "A deep discount waits for a human",
+      "proves": "the sell side is gated too",
+      "narrative": "A bundle on the INR 12,499 desk chair gives away more than the campaign's review threshold. Every other margin guardrail passes, so the offer is not suppressed -- it is held, with its discount reserved against the campaign so a second offer cannot overcommit while a person decides. Approving re-runs every other guardrail against current state first: a human waives the depth of the discount, not the margin floor.",
+      "expected_outcome": "gated",
+      "mandate": {
+        "buyer_id": "buyer_asha",
+        "per_txn_cap_paise": 1500000,
+        "total_budget_paise": 3000000,
+        "allowed_categories": [
+          "office",
+          "electronics"
+        ],
+        "ttl_hours": 24
+      },
+      "watch_for": [
+        "deep_discount_gate returns GATE, not FAIL -- everything before it passed",
+        "The campaign shows the discount held while the offer waits",
+        "Approving re-evaluates the whole gauntlet before the offer publishes"
       ]
     }
   ]

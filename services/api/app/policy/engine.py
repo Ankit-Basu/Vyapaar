@@ -5,8 +5,13 @@ There is no other path to the payment service.
 
 The engine is deliberately a *pure function*: it takes an already-assembled
 context and returns a `Decision`. It never reads the database and never calls
-Razorpay, which is what makes each of the seven checks unit-testable in isolation
+Razorpay, which is what makes each of the nine checks unit-testable in isolation
 and makes the outcome reproducible from the audit payload alone.
+
+Three checks are offer-aware. When a buyer accepts a merchant offer, the offer --
+not the anchor's list price -- is what is owed, every line in it must sit inside
+the mandate's categories, and every line must be in stock. A bundle is the obvious
+way to try to widen a mandate's scope, so that route is explicitly closed.
 
 Checks run in a fixed order, cheapest and most fundamental first. The first
 failure denies the intent and the remaining checks are recorded as `skipped`
@@ -25,13 +30,14 @@ from ..models import (
     Decision,
     DecisionAction,
     MandateRecord,
+    OfferQuote,
     PolicyCheck,
     Product,
     iso,
     utcnow,
 )
 
-POLICY_VERSION = "agentmandi.policy.v1"
+POLICY_VERSION = "vyapaar.policy.v1"
 
 
 def _inr(paise: int) -> str:
@@ -51,6 +57,13 @@ class EvaluationContext:
     mandate: MandateRecord | None = None
     mandate_invalid_reason: str | None = None
     product: Product | None = None
+    # A merchant offer the buyer chose to accept, already re-verified server-side by
+    # the growth layer. When present it -- not the anchor's list price -- is what the
+    # buyer owes, and every line in it is subject to the same category and stock
+    # checks the anchor is.
+    offer: OfferQuote | None = None
+    offer_invalid_reason: str | None = None
+    offer_line_products: dict[str, Product] = field(default_factory=dict)
     # Budget already committed by *this* intent, if it is being re-evaluated after
     # a human approved a gate. Excluded from the remaining-budget arithmetic so an
     # intent is not charged against its own reservation twice.
@@ -129,6 +142,72 @@ def check_merchant_match(ctx: EvaluationContext) -> PolicyCheck:
     )
 
 
+def check_offer_honoured(ctx: EvaluationContext) -> PolicyCheck:
+    """If the buyer accepted a merchant offer, that offer must still stand.
+
+    The merchant is allowed to make offers; it is not allowed to change one after
+    an agent has decided to take it. The growth layer re-fetches the offer from its
+    own records and re-prices it against the live catalog, and any drift lands here
+    as a denial rather than as a surprise on the invoice.
+
+    Passing trivially when no offer is attached keeps the ordinary path unchanged.
+    """
+    if ctx.offer is None:
+        if ctx.offer_invalid_reason:
+            return PolicyCheck(
+                id="offer_honoured",
+                name="Any accepted offer still stands",
+                status=CheckStatus.FAIL,
+                reason=ctx.offer_invalid_reason,
+                observed={"offer_attached": True, "offer_resolved": False},
+            )
+        return PolicyCheck(
+            id="offer_honoured",
+            name="Any accepted offer still stands",
+            status=CheckStatus.PASS,
+            reason="No merchant offer was accepted; the buyer pays the catalog price.",
+            observed={"offer_attached": False},
+        )
+
+    if ctx.offer_invalid_reason:
+        return PolicyCheck(
+            id="offer_honoured",
+            name="Any accepted offer still stands",
+            status=CheckStatus.FAIL,
+            reason=ctx.offer_invalid_reason,
+            observed={"offer_id": ctx.offer.offer_id},
+        )
+
+    offer = ctx.offer
+    if offer.list_total_paise - offer.discount_paise != offer.offer_total_paise:
+        return PolicyCheck(
+            id="offer_honoured",
+            name="Any accepted offer still stands",
+            status=CheckStatus.FAIL,
+            reason=(
+                f"Offer {offer.offer_id} does not reconcile: {_inr(offer.list_total_paise)} "
+                f"minus {_inr(offer.discount_paise)} is not {_inr(offer.offer_total_paise)}."
+            ),
+            observed={"offer_id": offer.offer_id},
+        )
+    return PolicyCheck(
+        id="offer_honoured",
+        name="Any accepted offer still stands",
+        status=CheckStatus.PASS,
+        reason=(
+            f"Offer {offer.offer_id} ({offer.kind.value}) is live and still prices at "
+            f"{_inr(offer.offer_total_paise)}, {_inr(offer.discount_paise)} off "
+            f"{_inr(offer.list_total_paise)} list."
+        ),
+        observed={
+            "offer_id": offer.offer_id,
+            "kind": offer.kind.value,
+            "offer_total_paise": offer.offer_total_paise,
+            "discount_paise": offer.discount_paise,
+        },
+    )
+
+
 def check_product_exists(ctx: EvaluationContext) -> PolicyCheck:
     if ctx.product is None:
         return PolicyCheck(
@@ -149,16 +228,24 @@ def check_product_exists(ctx: EvaluationContext) -> PolicyCheck:
             ),
             observed={"qty": ctx.qty, "max_qty_per_intent": ctx.max_qty_per_intent},
         )
-    expected = ctx.product.price_paise * ctx.qty
+    # With an offer attached, the merchant's quoted offer total is what is owed --
+    # already proven to reconcile against catalog prices by the growth gauntlet and
+    # re-proven by `offer_honoured` above.
+    expected = ctx.offer.offer_total_paise if ctx.offer else ctx.product.price_paise * ctx.qty
     if expected != ctx.amount_paise:
         return PolicyCheck(
             id="product_exists",
             name="Product exists in the merchant catalog",
             status=CheckStatus.FAIL,
             reason=(
-                f"Amount {_inr(ctx.amount_paise)} does not match the catalog price "
-                f"{_inr(ctx.product.price_paise)} x {ctx.qty} = {_inr(expected)}. "
-                "The merchant prices the order, not the agent."
+                f"Amount {_inr(ctx.amount_paise)} does not match "
+                + (
+                    f"offer {ctx.offer.offer_id}'s total of {_inr(expected)}. "
+                    if ctx.offer
+                    else f"the catalog price {_inr(ctx.product.price_paise)} x {ctx.qty} = "
+                    f"{_inr(expected)}. "
+                )
+                + "The merchant prices the order, not the agent."
             ),
             observed={"claimed_amount_paise": ctx.amount_paise, "catalog_amount_paise": expected},
         )
@@ -167,8 +254,15 @@ def check_product_exists(ctx: EvaluationContext) -> PolicyCheck:
         name="Product exists in the merchant catalog",
         status=CheckStatus.PASS,
         reason=(
-            f"{ctx.product.title} is listed at {_inr(ctx.product.price_paise)}; "
-            f"{ctx.qty} x = {_inr(ctx.amount_paise)}, priced by the merchant."
+            (
+                f"Offer {ctx.offer.offer_id} covers {len(ctx.offer.lines)} line(s) totalling "
+                f"{_inr(ctx.amount_paise)}, priced by the merchant."
+            )
+            if ctx.offer
+            else (
+                f"{ctx.product.title} is listed at {_inr(ctx.product.price_paise)}; "
+                f"{ctx.qty} x = {_inr(ctx.amount_paise)}, priced by the merchant."
+            )
         ),
         observed={
             "product_id": ctx.product.id,
@@ -180,8 +274,42 @@ def check_product_exists(ctx: EvaluationContext) -> PolicyCheck:
 
 
 def check_category_allowed(ctx: EvaluationContext) -> PolicyCheck:
+    """Every line has to be authorised, not just the one the agent went looking for.
+
+    A bundle is the obvious way to smuggle an unauthorised category into an order,
+    so with an offer attached the check runs over all of its lines rather than over
+    the anchor alone.
+    """
     assert ctx.mandate is not None and ctx.product is not None
     allowed = ctx.mandate.allowed_categories
+
+    if ctx.offer is not None:
+        offending = [line for line in ctx.offer.lines if line.category not in allowed]
+        categories = sorted({line.category for line in ctx.offer.lines})
+        if offending:
+            names = ", ".join(f"{line.title} ({line.category})" for line in offending)
+            return PolicyCheck(
+                id="category_allowed",
+                name="Product category is inside the mandate allow-list",
+                status=CheckStatus.FAIL,
+                reason=(
+                    f"Offer {ctx.offer.offer_id} includes {names}, which the buyer did not "
+                    f"authorise. The mandate permits only {allowed}. A bundle cannot widen "
+                    "a mandate's scope."
+                ),
+                observed={"offer_categories": categories, "allowed_categories": allowed},
+            )
+        return PolicyCheck(
+            id="category_allowed",
+            name="Product category is inside the mandate allow-list",
+            status=CheckStatus.PASS,
+            reason=(
+                f"Every category in the offer {categories} is on the mandate allow-list "
+                f"{allowed}."
+            ),
+            observed={"offer_categories": categories, "allowed_categories": allowed},
+        )
+
     if ctx.product.category not in allowed:
         return PolicyCheck(
             id="category_allowed",
@@ -269,8 +397,54 @@ def check_budget_remaining(ctx: EvaluationContext) -> PolicyCheck:
     )
 
 
+def _line_stock(ctx: EvaluationContext, product_id: str) -> int:
+    product = ctx.offer_line_products.get(product_id)
+    return product.stock if product is not None else 0
+
+
 def check_stock_available(ctx: EvaluationContext) -> PolicyCheck:
     assert ctx.product is not None
+
+    if ctx.offer is not None:
+        short = [
+            {
+                "product_id": line.product_id,
+                "title": line.title,
+                "stock": _line_stock(ctx, line.product_id),
+                "needed": line.qty,
+            }
+            for line in ctx.offer.lines
+            if _line_stock(ctx, line.product_id) < line.qty
+        ]
+        if short:
+            names = ", ".join(f"{s['title']} ({s['stock']} of {s['needed']})" for s in short)
+            return PolicyCheck(
+                id="stock_available",
+                name="Merchant can actually fulfil the order",
+                status=CheckStatus.FAIL,
+                reason=(
+                    f"Offer {ctx.offer.offer_id} cannot be fulfilled: {names}. Charging for "
+                    "stock the merchant cannot ship is not allowed."
+                ),
+                observed={"short": short},
+            )
+        return PolicyCheck(
+            id="stock_available",
+            name="Merchant can actually fulfil the order",
+            status=CheckStatus.PASS,
+            reason=f"All {len(ctx.offer.lines)} line(s) of the offer are in stock.",
+            observed={
+                "lines": [
+                    {
+                        "product_id": line.product_id,
+                        "qty": line.qty,
+                        "stock": _line_stock(ctx, line.product_id),
+                    }
+                    for line in ctx.offer.lines
+                ]
+            },
+        )
+
     if ctx.product.stock < ctx.qty:
         return PolicyCheck(
             id="stock_available",
@@ -322,6 +496,7 @@ def check_high_value_gate(ctx: EvaluationContext) -> PolicyCheck:
 ORDERED_CHECKS: list[tuple[str, str, CheckFn]] = [
     ("mandate_valid", "Mandate is signed, unexpired and on record", check_mandate_valid),
     ("merchant_match", "Intent targets the merchant the mandate names", check_merchant_match),
+    ("offer_honoured", "Any accepted offer still stands", check_offer_honoured),
     ("product_exists", "Product exists in the merchant catalog", check_product_exists),
     ("category_allowed", "Product category is inside the mandate allow-list", check_category_allowed),
     ("per_txn_cap", "Amount is within the per-transaction cap", check_per_txn_cap),

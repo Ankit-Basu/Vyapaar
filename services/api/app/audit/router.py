@@ -14,7 +14,7 @@ from ..models import AuditChainVerification, AuditEvent
 from . import log as audit
 from .broadcaster import broadcaster
 
-logger = logging.getLogger("agentmandi.audit.router")
+logger = logging.getLogger("vyapaar.audit.router")
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 HEARTBEAT_SECONDS = 15.0

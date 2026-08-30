@@ -17,7 +17,7 @@ Two more make an agent's life easier: `get_merchant_info` and `check_mandate`.
 
 Run it:
     python -m app.mcp_server                # stdio, for Claude Desktop et al.
-    AGENTMANDI_API_URL=http://host:8000 ... # point at a non-local merchant
+    VYAPAAR_API_URL=http://host:8000 ... # point at a non-local merchant
 """
 
 from __future__ import annotations
@@ -28,10 +28,10 @@ from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-API_URL = os.environ.get("AGENTMANDI_API_URL", "http://127.0.0.1:8000").rstrip("/")
-TIMEOUT = float(os.environ.get("AGENTMANDI_MCP_TIMEOUT", "30"))
+API_URL = os.environ.get("VYAPAAR_API_URL", "http://127.0.0.1:8000").rstrip("/")
+TIMEOUT = float(os.environ.get("VYAPAAR_MCP_TIMEOUT", "30"))
 
-mcp = FastMCP("agentmandi")
+mcp = FastMCP("vyapaar")
 
 
 def _call(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
@@ -42,8 +42,8 @@ def _call(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
     except httpx.RequestError as exc:
         return {
             "error": "merchant_unreachable",
-            "detail": f"Could not reach the AgentMandi API at {API_URL}: {exc}",
-            "hint": "Start the merchant API, or set AGENTMANDI_API_URL to where it runs.",
+            "detail": f"Could not reach the Vyapaar API at {API_URL}: {exc}",
+            "hint": "Start the merchant API, or set VYAPAAR_API_URL to where it runs.",
         }
     if response.status_code >= 400:
         try:
@@ -156,11 +156,80 @@ def get_product(product_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def get_offers(product_id: str, mandate_token: str | None = None) -> dict[str, Any]:
+    """Ask the merchant what it will offer on a product before you buy it.
+
+    Args:
+        product_id: The product you are about to purchase.
+        mandate_token: Optional but recommended. Present your mandate and the
+            merchant fits its offers to what you are actually allowed to spend,
+            instead of proposing purchases you would have to refuse.
+
+    Returns published offers and, separately, the ones the merchant's own
+    guardrails refused to make -- with the check that refused each. Both are worth
+    reading: a withheld offer tells you where the merchant's limits are.
+
+    Each offer carries a `disclosure` stating plainly what changes if you accept.
+    Read it before accepting: a `bundle` adds an item to the order, a `volume`
+    tier commits you to several units, and an `upgrade` swaps the product for a
+    different one. Only accept what your instructions actually authorise.
+
+    To accept, pass the `offer_id` to `create_purchase_intent`. Only the id
+    travels -- the merchant re-prices the offer server-side, so nothing you send
+    can change what it costs.
+    """
+    params: dict[str, Any] = {"product_id": product_id}
+    if mandate_token:
+        params["mandate_token"] = mandate_token
+
+    data = _call("GET", "/growth/offers", params=params)
+    if "error" in data:
+        return data
+
+    return {
+        "merchant_id": data.get("merchant_id"),
+        "anchor_product_id": data.get("anchor_product_id"),
+        "fitted_to_your_mandate": data.get("mandate_aware"),
+        "offers": [
+            {
+                "offer_id": offer["offer_id"],
+                "kind": offer["kind"],
+                "headline": offer["headline"],
+                "you_pay_paise": offer["offer_total_paise"],
+                "you_pay_display": _inr(offer["offer_total_paise"]),
+                "list_total_paise": offer["list_total_paise"],
+                "you_save_paise": offer["discount_paise"],
+                "you_save_display": _inr(offer["discount_paise"]),
+                "discount_percent": round(offer["discount_bps"] / 100, 2),
+                "items": [
+                    {
+                        "product_id": line["product_id"],
+                        "title": line["title"],
+                        "qty": line["qty"],
+                        "unit_price_paise": line["unit_price_paise"],
+                    }
+                    for line in offer["lines"]
+                ],
+                "why_the_merchant_offers_it": offer["rationale"],
+                "what_changes_if_you_accept": offer["disclosure"],
+                "expires_at": offer["expires_at"],
+            }
+            for offer in data.get("offers", [])
+        ],
+        "withheld": data.get("withheld", []),
+        "how_to_accept": (
+            "Pass the offer_id to create_purchase_intent along with your mandate token "
+            "and the product_id you started from."
+        ),
+    }
+
+@mcp.tool()
 def create_purchase_intent(
     mandate_token: str,
     product_id: str,
     qty: int = 1,
     rationale: str | None = None,
+    offer_id: str | None = None,
 ) -> dict[str, Any]:
     """Ask the merchant for permission to buy. This is the only route to a payment.
 
@@ -175,6 +244,12 @@ def create_purchase_intent(
         qty: How many units.
         rationale: One sentence on why you picked this. It is recorded in the
             merchant's audit trail next to the decision, so make it truthful.
+        offer_id: An offer from `get_offers` you have decided to accept. Only the
+            id travels: the merchant re-fetches and re-prices the offer, and any
+            drift since it was published shows up as an `offer_honoured` denial
+            rather than a surprise on the invoice. Accept only what your
+            instructions authorise -- a bundle or volume tier changes what you are
+            buying.
 
     Returns a decision of `auto_approve`, `gate_for_human` or `deny`, along with
     every check and its reason. On `deny`, read `failed_check` and adapt --
@@ -188,6 +263,8 @@ def create_purchase_intent(
     }
     if rationale:
         body["agent_rationale"] = rationale
+    if offer_id:
+        body["offer_id"] = offer_id
 
     data = _call("POST", "/intents", json=body)
     if "error" in data:

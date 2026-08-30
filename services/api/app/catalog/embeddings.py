@@ -27,7 +27,7 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-log = logging.getLogger("agentmandi.catalog.embeddings")
+log = logging.getLogger("vyapaar.catalog.embeddings")
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _CHAR_NGRAM = 4

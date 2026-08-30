@@ -41,7 +41,7 @@ from .gateway import (
     verify_webhook_signature,
 )
 
-log = logging.getLogger("agentmandi.payments")
+log = logging.getLogger("vyapaar.payments")
 
 PAID_EVENTS = {"payment_link.paid", "order.paid", "payment.captured"}
 FAILED_EVENTS = {"payment.failed", "payment_link.expired", "payment_link.cancelled"}
@@ -149,7 +149,7 @@ def start_checkout(*, intent_id: str, mandate_token: str) -> ConfirmPurchaseResp
         )
         link = gateway.create_payment_link(
             amount_paise=intent.amount_paise,
-            description=f"{intent.qty} x {intent.product_title} via AgentMandi",
+            description=f"{intent.qty} x {intent.product_title} via Vyapaar",
             reference_id=intent.intent_id,
             notes=notes,
             callback_url=f"{settings.web_base_url.rstrip('/')}/checkout/return?intent_id={intent.intent_id}",
@@ -378,7 +378,7 @@ def handle_webhook(
                 actor="payment-service",
                 event_type="payment.webhook_ignored",
                 intent_id=intent_id,
-                summary=f"Webhook '{event_type}' carries no state change for AgentMandi.",
+                summary=f"Webhook '{event_type}' carries no state change for Vyapaar.",
                 reasons=[f"'{event_type}' is not in the paid or failed event sets."],
                 payload={"event": event_type},
             )

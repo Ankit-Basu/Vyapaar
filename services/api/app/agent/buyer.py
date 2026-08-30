@@ -15,12 +15,14 @@ once and then stops with a clear explanation rather than hammering the merchant.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from ..catalog import store as catalog
+from ..growth import service as growth
 from ..intents import service as intents
 from ..mandate import service as mandates
 from ..models import (
@@ -29,6 +31,7 @@ from ..models import (
     Decision,
     DecisionAction,
     MandateRecord,
+    OfferQuote,
     PurchaseIntentRequest,
     ScoredProduct,
 )
@@ -36,7 +39,7 @@ from ..payments import service as payments
 from ..payments.gateway import get_gateway
 from .llm import LLMUnavailable, describe_llm, get_llm
 
-log = logging.getLogger("agentmandi.agent.buyer")
+log = logging.getLogger("vyapaar.agent.buyer")
 
 MAX_ATTEMPTS = 2
 
@@ -45,6 +48,17 @@ MAX_ATTEMPTS = 2
 # best match overall, or barely relevant at all, the agent declines instead.
 RELEVANCE_FLOOR = 0.15
 SUBSTITUTION_RATIO = 0.5
+
+# An agent that takes every upsell is not representing anybody. These two numbers
+# are the whole of its offer policy, and both exist to protect the buyer rather
+# than the merchant.
+#
+# A step up has to stay recognisably the thing that was asked for: past this
+# premium it is a different purchase, however good the discount looks.
+MAX_UPGRADE_PREMIUM_RATIO = 0.45
+# And the merchant has to be genuinely funding the step. Below this the "offer"
+# is just a more expensive product wearing a discount badge.
+MIN_MERCHANT_CONTRIBUTION_BPS = 300
 
 
 def _inr(paise: int) -> str:
@@ -264,6 +278,120 @@ class BuyerAgent:
 
     # -- the run ----------------------------------------------------------
 
+
+    @staticmethod
+    def _consider_offers(
+        *,
+        choice: ScoredProduct,
+        mandate_token: str,
+        plan: _Plan,
+    ) -> tuple[OfferQuote | None, str, list[dict[str, Any]]]:
+        """Ask the merchant what it will offer, then decide on the buyer's behalf.
+
+        The agent is a fiduciary, not a shopper. Its instruction named one thing,
+        so the test is not "is this a good deal" but "is this still the purchase I
+        was asked to make":
+
+        * A **bundle** adds an item nobody asked for. However real the saving, the
+          agent has no authority to spend its principal's money on a second
+          product, so it declines and says why.
+        * A **volume** tier commits to three of something when one was wanted.
+          Same problem.
+        * An **upgrade** is the one that can be accepted: it is the same job, done
+          better, with the merchant funding part of the step. It is taken only if
+          the premium stays modest, the merchant is genuinely contributing, and any
+          price ceiling in the original instruction still holds.
+
+        Declining is not free for the merchant either -- it releases the discount
+        the campaign was holding, which is why every rejection is reported rather
+        than dropped.
+        """
+        considered: list[dict[str, Any]] = []
+        try:
+            listing = growth.quote_offers(choice.product.id, mandates.verify(mandate_token).record)
+        except Exception:  # noqa: BLE001 - offers are an enhancement, never a blocker
+            return None, "The merchant made no offers on this product.", considered
+
+        if not listing.offers:
+            return None, "The merchant made no offers I could take on this product.", considered
+
+        accepted: OfferQuote | None = None
+        verdicts: list[str] = []
+
+        for offer in listing.offers:
+            verdict = BuyerAgent._judge_offer(offer, choice, plan)
+            considered.append(
+                {
+                    "offer_id": offer.offer_id,
+                    "kind": offer.kind.value,
+                    "offer_total_paise": offer.offer_total_paise,
+                    "discount_paise": offer.discount_paise,
+                    "accepted": verdict[0],
+                    "reason": verdict[1],
+                }
+            )
+            if verdict[0] and accepted is None:
+                accepted = offer
+                verdicts.append(f"Taking the {offer.kind.value}: {verdict[1]}")
+            else:
+                verdicts.append(f"Declining the {offer.kind.value}: {verdict[1]}")
+                # Hand the discount back so it can fund an offer someone will take.
+                # A hold that fails to release is a merchant-side accounting nuisance,
+                # not a reason to abandon a purchase the buyer already decided on.
+                with contextlib.suppress(Exception):
+                    growth.decline(offer.offer_id, verdict[1])
+
+        return accepted, " ".join(verdicts), considered
+
+    @staticmethod
+    def _judge_offer(
+        offer: OfferQuote, choice: ScoredProduct, plan: _Plan
+    ) -> tuple[bool, str]:
+        """One offer, one verdict, one reason. See `_consider_offers` for the policy."""
+        anchor_price = choice.product.price_paise
+
+        if offer.kind.value == "bundle":
+            extra = [line.title for line in offer.lines if not line.is_anchor]
+            return False, (
+                f"it adds {', '.join(extra)} to the order. The saving is real, but I was asked "
+                f"for {choice.product.title} and I have no authority to buy something else with "
+                "my principal's money."
+            )
+
+        if offer.kind.value == "volume":
+            qty = sum(line.qty for line in offer.lines)
+            return False, (
+                f"it commits to {qty} units when one was wanted. A lower unit price is not worth "
+                "buying two more of something nobody asked for."
+            )
+
+        # Upgrade.
+        premium = offer.offer_total_paise - anchor_price
+        ratio = premium / anchor_price if anchor_price else 1.0
+
+        if plan.max_price_paise is not None and offer.offer_total_paise > plan.max_price_paise:
+            return False, (
+                f"at {_inr(offer.offer_total_paise)} it breaks the {_inr(plan.max_price_paise)} "
+                "ceiling in my instruction. A better product is not worth ignoring the limit I "
+                "was given."
+            )
+        if offer.discount_bps < MIN_MERCHANT_CONTRIBUTION_BPS:
+            return False, (
+                f"the merchant is only funding {offer.discount_bps / 100:.1f}% of the step up, "
+                "which makes this a costlier product rather than an offer."
+            )
+        if ratio > MAX_UPGRADE_PREMIUM_RATIO:
+            return False, (
+                f"it costs {ratio:.0%} more than the {choice.product.title} I picked. Past that "
+                "it stops being the same purchase."
+            )
+
+        return True, (
+            f"same job, better product: {_inr(premium)} more than the "
+            f"{choice.product.title}, with the merchant funding "
+            f"{_inr(offer.discount_paise)} of the difference."
+        )
+
     def run(
         self,
         *,
@@ -369,12 +497,26 @@ class BuyerAgent:
             if before_intent is not None:
                 before_intent(choice)
 
+            offer, offer_reasoning, considered = self._consider_offers(
+                choice=choice, mandate_token=mandate_token, plan=plan
+            )
+            if considered:
+                add(
+                    "consider_offers",
+                    offer_reasoning,
+                    {
+                        "offers_considered": considered,
+                        "accepted_offer_id": offer.offer_id if offer else None,
+                    },
+                )
+
             response = intents.create_intent(
                 PurchaseIntentRequest(
                     mandate_token=mandate_token,
                     product_id=choice.product.id,
                     qty=1,
                     agent_rationale=rationale,
+                    offer_id=offer.offer_id if offer else None,
                 )
             )
             decision = response.decision
@@ -466,7 +608,16 @@ class BuyerAgent:
                 if result.get("status") == "paid":
                     final = mandates.get_record(mandate.mandate_id)
                     message = (
-                        f"Bought {choice.product.title} for {_inr(response.intent.amount_paise)}. "
+                        # An accepted upgrade swaps the product, so report what was
+                        # actually bought rather than what was searched for.
+                        f"Bought {response.intent.product_title} for "
+                        f"{_inr(response.intent.amount_paise)}"
+                        + (
+                            f" (upgraded from {choice.product.title})"
+                            if response.intent.product_id != choice.product.id
+                            else ""
+                        )
+                        + ". "
                         + (
                             f"{_inr(final.spent_paise)} of {_inr(final.total_budget_paise)} spent, "
                             f"{_inr(final.available_paise)} left."

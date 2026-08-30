@@ -28,6 +28,7 @@ from ..audit import log as audit
 from ..catalog import store as catalog
 from ..config import get_settings
 from ..db import connect, transaction
+from ..growth import service as growth
 from ..mandate import service as mandates
 from ..models import (
     Decision,
@@ -43,7 +44,7 @@ from ..models import (
 )
 from ..policy.engine import EvaluationContext, evaluate
 
-log = logging.getLogger("agentmandi.intents")
+log = logging.getLogger("vyapaar.intents")
 
 
 class IntentError(Exception):
@@ -71,6 +72,9 @@ def _row_to_intent(row: sqlite3.Row) -> PurchaseIntent:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         reserved_paise=row["reserved_paise"],
+        offer_id=row["offer_id"],
+        list_amount_paise=row["list_amount_paise"],
+        discount_paise=row["discount_paise"],
     )
 
 
@@ -152,9 +156,39 @@ def create_intent(request: PurchaseIntentRequest) -> PurchaseIntentResponse:
     mandate_record = verification.record
     product = catalog.get_product(request.product_id)
 
+    # An accepted offer is resolved server-side from its id alone. The growth layer
+    # re-prices it against the live catalog; whatever it says here is what the buyer
+    # owes, and any drift becomes an `offer_honoured` denial rather than a surprise.
+    offer = None
+    offer_invalid_reason = None
+    offer_line_products: dict[str, object] = {}
+    if request.offer_id:
+        offer, _offer_decision, offer_invalid_reason = growth.verify_for_intent(request.offer_id)
+        if offer is not None:
+            offer_line_products = {
+                line.product_id: catalog.get_product(line.product_id)
+                for line in offer.lines
+                if catalog.get_product(line.product_id) is not None
+            }
+
+    # An upgrade offer replaces the product the agent came for, so the intent has
+    # to record what is actually being bought rather than what was searched for.
+    # Its `offer.anchor_product_id` still remembers the original choice, which is
+    # what revenue attribution measures the uplift against.
+    effective_product_id = request.product_id
+    if offer is not None and not offer_invalid_reason and offer.lines:
+        primary = next((line for line in offer.lines if line.is_anchor), offer.lines[0])
+        effective_product_id = primary.product_id
+        primary_product = catalog.get_product(primary.product_id)
+        if primary_product is not None:
+            product = primary_product
+
     if product is None:
         amount_paise = 0
         unit_price = 0
+    elif offer is not None and not offer_invalid_reason:
+        unit_price = product.price_paise
+        amount_paise = offer.offer_total_paise
     else:
         unit_price = product.price_paise
         amount_paise = unit_price * request.qty
@@ -202,7 +236,7 @@ def create_intent(request: PurchaseIntentRequest) -> PurchaseIntentResponse:
 
         ctx = EvaluationContext(
             merchant_id=settings.merchant_id,
-            product_id=request.product_id,
+            product_id=effective_product_id,
             qty=request.qty,
             amount_paise=amount_paise,
             hitl_threshold_paise=settings.hitl_threshold_paise,
@@ -210,6 +244,9 @@ def create_intent(request: PurchaseIntentRequest) -> PurchaseIntentResponse:
             mandate=live_mandate if verification.valid else None,
             mandate_invalid_reason=None if verification.valid else verification.reason,
             product=product,
+            offer=offer if not offer_invalid_reason else None,
+            offer_invalid_reason=offer_invalid_reason,
+            offer_line_products=offer_line_products,
         )
         decision = evaluate(ctx)
 
@@ -241,15 +278,16 @@ def create_intent(request: PurchaseIntentRequest) -> PurchaseIntentResponse:
             INSERT INTO purchase_intent (
                 intent_id, mandate_id, buyer_id, merchant_id, product_id, product_title,
                 category, unit_price_paise, qty, amount_paise, status, agent_rationale,
-                reserved_paise, idempotency_key, decision_json, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                reserved_paise, idempotency_key, decision_json, offer_id,
+                list_amount_paise, discount_paise, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 intent_id,
                 live_mandate.mandate_id,
                 live_mandate.buyer_id,
                 settings.merchant_id,
-                request.product_id,
+                effective_product_id,
                 product.title if product else "(unknown product)",
                 product.category if product else "(unknown)",
                 unit_price,
@@ -260,10 +298,41 @@ def create_intent(request: PurchaseIntentRequest) -> PurchaseIntentResponse:
                 reserved,
                 request.idempotency_key,
                 decision.model_dump_json(),
+                offer.offer_id if offer is not None and not offer_invalid_reason else None,
+                offer.list_total_paise if offer is not None and not offer_invalid_reason else 0,
+                offer.discount_paise if offer is not None and not offer_invalid_reason else 0,
                 now,
                 now,
             ),
         )
+
+        # An offer that was actually taken up stops being available to anyone else,
+        # and its discount hold now belongs to this intent.
+        if offer is not None and not offer_invalid_reason and decision.action in (
+            DecisionAction.AUTO_APPROVE,
+            DecisionAction.GATE_FOR_HUMAN,
+        ):
+            growth.mark_accepted(offer.offer_id, intent_id, live_mandate.buyer_id, conn)
+            audit.record(
+                conn=conn,
+                actor="buyer-agent",
+                event_type="offer.accepted",
+                intent_id=intent_id,
+                mandate_id=live_mandate.mandate_id,
+                amount_paise=offer.discount_paise,
+                summary=(
+                    f"Agent accepted {offer.kind.value} offer {offer.offer_id}: paying "
+                    f"{_inr(offer.offer_total_paise)} instead of "
+                    f"{_inr(offer.list_total_paise)}"
+                ),
+                reasons=[offer.disclosure],
+                payload={
+                    "offer_id": offer.offer_id,
+                    "kind": offer.kind.value,
+                    "discount_paise": offer.discount_paise,
+                    "baseline_paise": offer.lines[0].unit_price_paise,
+                },
+            )
 
         audit.record(
             conn=conn,
@@ -496,7 +565,20 @@ def mark_paid(intent_id: str, conn: sqlite3.Connection, payload: dict[str, Any])
         return intent
 
     settled = mandates.settle(intent.mandate_id, intent.reserved_paise, conn)
-    stock_ok = catalog.decrement_stock(intent.product_id, intent.qty, conn)
+
+    # A bundle ships every line, not just the anchor the agent searched for, so
+    # stock comes off each of them. The discount hold settles alongside the buyer's
+    # budget: the money the merchant gave away is only really given away once the
+    # payment clears.
+    if intent.offer_id:
+        growth.settle_for_intent(intent_id, conn)
+        offer = growth.get_offer(intent.offer_id)
+        lines = offer.offer.lines if offer else []
+        stock_ok = all(
+            catalog.decrement_stock(line.product_id, line.qty, conn) for line in lines
+        ) if lines else catalog.decrement_stock(intent.product_id, intent.qty, conn)
+    else:
+        stock_ok = catalog.decrement_stock(intent.product_id, intent.qty, conn)
     conn.execute(
         "UPDATE purchase_intent SET status = ?, reserved_paise = 0, updated_at = ? WHERE intent_id = ?",
         (IntentStatus.PAID.value, iso(utcnow()), intent_id),
@@ -546,6 +628,10 @@ def mark_failed(
         return intent
 
     released = mandates.release(intent.mandate_id, intent.reserved_paise, conn)
+    if intent.offer_id:
+        # A failed charge never consumes discount budget either. The campaign gets
+        # its money back exactly as the buyer's mandate does.
+        growth.release_for_intent(intent_id, conn)
     conn.execute(
         "UPDATE purchase_intent SET status = ?, reserved_paise = 0, updated_at = ? WHERE intent_id = ?",
         (IntentStatus.FAILED.value, iso(utcnow()), intent_id),

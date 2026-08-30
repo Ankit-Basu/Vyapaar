@@ -12,7 +12,7 @@ import contextlib
 import logging
 from typing import Any
 
-log = logging.getLogger("agentmandi.audit.sse")
+log = logging.getLogger("vyapaar.audit.sse")
 
 _MAX_QUEUE = 512
 
