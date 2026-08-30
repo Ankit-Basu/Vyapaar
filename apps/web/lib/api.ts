@@ -1,5 +1,5 @@
 /**
- * Client for the AgentMandi API.
+ * Client for the Vyapaar API.
  *
  * Everything the dashboard renders is parsed through the shared zod schemas, so
  * a shape change on the API surfaces here as a loud error rather than a blank
@@ -16,6 +16,11 @@ import {
   MandateRecordSchema,
   PaymentRecordSchema,
   PurchaseIntentSchema,
+  CampaignSchema,
+  EvaluatedOfferSchema,
+  OfferListResponseSchema,
+  RebalanceResultSchema,
+  RevenueMetricsSchema,
   ScenarioSchema,
   type AgentRunResult,
   type AuditChainVerification,
@@ -26,8 +31,13 @@ import {
   type MandateRecord,
   type PaymentRecord,
   type PurchaseIntent,
+  type Campaign,
+  type EvaluatedOffer,
+  type OfferListResponse,
+  type RebalanceResult,
+  type RevenueMetrics,
   type Scenario,
-} from "@agentmandi/shared-types";
+} from "@vyapaar/shared-types";
 import { z } from "zod";
 
 export const API_BASE =
@@ -57,7 +67,7 @@ async function request<S extends z.ZodTypeAny>(
     });
   } catch {
     throw new ApiError(
-      `Cannot reach the AgentMandi API at ${API_BASE}. Is it running?`,
+      `Cannot reach the Vyapaar API at ${API_BASE}. Is it running?`,
       0,
     );
   }
@@ -207,6 +217,70 @@ export const confirmPurchase = (intentId: string, mandateToken: string) =>
     { intent_id: intentId, mandate_token: mandateToken },
   );
 
+// ------------------------------------------------------------------- growth
+
+/**
+ * Offers for one product.
+ *
+ * Pass a mandate token and the merchant fits what it offers to what that buyer
+ * is actually allowed to spend -- the response's `withheld` array then carries
+ * the offers its own guardrails refused, and why.
+ */
+export const getOffers = (productId: string, mandateToken?: string) =>
+  request(
+    `/growth/offers?product_id=${encodeURIComponent(productId)}` +
+      (mandateToken ? `&mandate_token=${encodeURIComponent(mandateToken)}` : ""),
+    OfferListResponseSchema,
+  );
+
+/** Merchant view of every offer, including suppressed ones and their margins. */
+export const getOfferLedger = (limit = 60) =>
+  request(`/growth/offers/ledger?limit=${limit}`, z.array(EvaluatedOfferSchema));
+
+export const getCampaigns = () => request("/growth/campaigns", z.array(CampaignSchema));
+
+export const getRevenueMetrics = () => request("/growth/metrics", RevenueMetricsSchema);
+
+const UnitEconomicsSchema = z.object({
+  note: z.string(),
+  products: z.array(
+    z.object({
+      product_id: z.string(),
+      title: z.string(),
+      category: z.string(),
+      price_paise: z.number().int(),
+      cost_paise: z.number().int(),
+      margin_paise: z.number().int(),
+      margin_bps: z.number().int(),
+      stock: z.number().int(),
+    }),
+  ),
+});
+export const getUnitEconomics = () => request("/growth/economics", UnitEconomicsSchema);
+
+export const rebalanceCampaign = () =>
+  post("/growth/campaigns/rebalance", RebalanceResultSchema);
+
+export const setCampaignStatus = (campaignId: string, status: "ACTIVE" | "PAUSED" | "ENDED") =>
+  post(`/growth/campaigns/${campaignId}/status?status=${status}`, CampaignSchema);
+
+/** Approve or reject a gated offer. Approving re-runs every other margin guardrail. */
+export const resolveOfferGate = (
+  offerId: string,
+  approve: boolean,
+  resolvedBy = "merchant-operator",
+) =>
+  post(
+    `/growth/offers/${offerId}/resolve?approve=${approve}&resolved_by=${encodeURIComponent(resolvedBy)}`,
+    EvaluatedOfferSchema,
+  );
+
+export const declineOffer = (offerId: string) =>
+  post(
+    `/growth/offers/${offerId}/decline`,
+    z.object({ offer_id: z.string(), status: z.string().nullable() }),
+  );
+
 export const simulatePayment = (linkId: string, outcome: "success" | "failure") =>
   post(
     `/payments/simulator/${linkId}/pay?outcome=${outcome}`,
@@ -217,7 +291,12 @@ export type {
   AgentRunResult,
   AuditChainVerification,
   AuditEvent,
+  Campaign,
   CatalogFeedPage,
+  EvaluatedOffer,
+  OfferListResponse,
+  RebalanceResult,
+  RevenueMetrics,
   Decision,
   Health,
   MandateRecord,

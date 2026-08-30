@@ -39,7 +39,7 @@ const clashDisplay = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "AgentMandi — agent commerce control room",
+  title: "Vyapaar — agent commerce control room",
   description:
     "Live view of an AI buyer agent transacting with a Razorpay merchant: guardrail decisions, spend against mandate, and a hash-chained audit trail.",
 };

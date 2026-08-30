@@ -7,7 +7,27 @@ interface LogoProps {
   textClassName?: string;
 }
 
-export function AgentMandiLogo({
+/**
+ * The Vyapaar mark: a rupee held between two brackets.
+ *
+ * The product's whole argument in one glyph. Brackets read as *bounds* to anyone
+ * who has seen a line of code or of maths, and there are deliberately two,
+ * because both sides of this counter are bounded — the buyer by a signed mandate,
+ * the merchant by a margin floor. The rupee sits between them because money only
+ * ever moves inside the guardrails. There is no path around either bracket.
+ *
+ * The left bracket is drawn heavier. The buy side is the one that has to hold
+ * against an untrusted agent, and the asymmetry stops the mark reading as a
+ * plain symmetrical container.
+ *
+ * The rupee is the real U+20B9 glyph rather than a hand-traced path. Tracing it
+ * was tried: every version legible at 80px collapsed into a backslash or a blob
+ * by 16px, which is the one size a mark genuinely has to survive. A font that
+ * ships ₹ has already solved that problem, and every system font has shipped it
+ * for over a decade. The stack ends in `sans-serif` so there is no single point
+ * of failure.
+ */
+export function VyapaarLogo({
   className = "",
   size = 32,
   showText = true,
@@ -15,7 +35,6 @@ export function AgentMandiLogo({
 }: LogoProps) {
   return (
     <div className={`inline-flex items-center gap-3 select-none ${className}`}>
-      {/* Standalone Precision Cryptographic Rupee Shield */}
       <div
         className="relative shrink-0 flex items-center justify-center transition-transform duration-300 hover:scale-105"
         style={{ width: size, height: size }}
@@ -24,119 +43,66 @@ export function AgentMandiLogo({
           viewBox="0 0 36 36"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full drop-shadow-[0_2px_10px_rgba(255,183,123,0.35)]"
+          className="w-full h-full drop-shadow-[0_2px_10px_rgba(255,183,123,0.3)]"
+          role="img"
+          aria-label="Vyapaar"
         >
           <defs>
-            {/* Primary Amber-Gold Metal Gradient */}
-            <linearGradient id="amberGoldMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="vyapaarMetal" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ffd0a8" />
-              <stop offset="45%" stopColor="#ffb77b" />
+              <stop offset="50%" stopColor="#ffb77b" />
               <stop offset="100%" stopColor="#b16d2e" />
-            </linearGradient>
-
-            {/* Left Facet Gradient */}
-            <linearGradient id="shieldFacetLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ffb77b" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#141416" stopOpacity="0.9" />
-            </linearGradient>
-
-            {/* Right Facet Gradient */}
-            <linearGradient id="shieldFacetRight" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ffd0a8" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#b16d2e" stopOpacity="0.18" />
             </linearGradient>
           </defs>
 
-          {/* Left Facet of Shield */}
+          {/* Left bound — the buyer's mandate. Heavier: it holds against an untrusted agent. */}
           <path
-            d="M18 3 L5.5 8 V18.5 C5.5 26 11.5 31.5 18 33.5 V3 Z"
-            fill="url(#shieldFacetLeft)"
-          />
-
-          {/* Right Facet of Shield */}
-          <path
-            d="M18 3 L30.5 8 V18.5 C30.5 26 24.5 31.5 18 33.5 V3 Z"
-            fill="url(#shieldFacetRight)"
-          />
-
-          {/* Outer Shield Contour */}
-          <path
-            d="M18 3 L30.5 8 V18.5 C30.5 26 24.5 31.5 18 33.5 C11.5 31.5 5.5 26 5.5 18.5 V8 L18 3 Z"
-            stroke="url(#amberGoldMetal)"
-            strokeWidth="1.6"
+            d="M11.5 6.5 H6.5 V29.5 H11.5"
+            stroke="url(#vyapaarMetal)"
+            strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Center Dividing Spine */}
+          {/* Right bound — the merchant's margin floor. */}
           <path
-            d="M18 3 V33.5"
-            stroke="url(#amberGoldMetal)"
-            strokeWidth="0.8"
-            strokeOpacity="0.35"
-          />
-
-          {/* Official Indian Rupee (₹) Symbol Elements */}
-          {/* Top Horizon Bar */}
-          <rect
-            x="9.5"
-            y="7.5"
-            width="17"
-            height="2.2"
-            rx="1.1"
-            fill="url(#amberGoldMetal)"
-          />
-
-          {/* Second Parallel Horizon Bar */}
-          <rect
-            x="9.5"
-            y="12.5"
-            width="12"
-            height="2.2"
-            rx="1.1"
-            fill="url(#amberGoldMetal)"
-          />
-
-          {/* Vertical Stem */}
-          <rect
-            x="13.4"
-            y="7.5"
-            width="2.2"
-            height="6.5"
-            fill="url(#amberGoldMetal)"
-          />
-
-          {/* Devanagari 'Ra' Loop */}
-          <path
-            d="M14.5 13.5 C19.5 13.5 22.5 15.2 22.5 18 C22.5 20.8 19.5 22.5 14.5 22.5"
-            stroke="url(#amberGoldMetal)"
-            strokeWidth="2.2"
+            d="M24.5 6.5 H29.5 V29.5 H24.5"
+            stroke="url(#vyapaarMetal)"
+            strokeWidth="2.1"
             strokeLinecap="round"
-            fill="none"
+            strokeLinejoin="round"
+            strokeOpacity="0.75"
           />
 
-          {/* Diagonal Slash Leg */}
-          <path
-            d="M16 22.5 L24 30"
-            stroke="url(#amberGoldMetal)"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-
-          {/* Glowing Apex Node */}
-          <circle cx="18" cy="3" r="1.1" fill="#ffd0a8" />
+          {/* The money, inside the bounds. */}
+          <text
+            x="18"
+            y="25.6"
+            textAnchor="middle"
+            fontFamily='"Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif'
+            fontWeight="700"
+            fontSize="21"
+            fill="url(#vyapaarMetal)"
+          >
+            &#8377;
+          </text>
         </svg>
       </div>
 
-      {showText && (
-        <span
-          className={`font-mono text-base font-bold tracking-[0.14em] text-[#e5e2e3] transition-colors ${textClassName}`}
-        >
-          AGENT<span className="text-[#ffb77b]">MANDI</span>
-        </span>
-      )}
+      {showText && <Wordtype className={textClassName} />}
     </div>
   );
 }
 
-export default AgentMandiLogo;
+/** The name itself. Split so the stress lands on the second half, as in speech. */
+export function Wordtype({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`font-mono text-base font-bold tracking-[0.14em] text-[#e5e2e3] transition-colors ${className}`}
+    >
+      VYA<span className="text-[#ffb77b]">PAAR</span>
+    </span>
+  );
+}
+
+export default VyapaarLogo;

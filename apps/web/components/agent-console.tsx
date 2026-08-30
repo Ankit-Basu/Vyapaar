@@ -5,7 +5,7 @@ import {
   formatPaise,
   type AgentRunResult,
   type MandateRecord,
-} from "@agentmandi/shared-types";
+} from "@vyapaar/shared-types";
 import { Bot, KeyRound, Loader2, Send, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 

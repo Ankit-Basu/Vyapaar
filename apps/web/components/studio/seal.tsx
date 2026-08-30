@@ -32,7 +32,7 @@ export function Seal({
   className?: string;
 }) {
   const id = useId();
-  const ringText = "AGENTMANDI · MANDATE · HS256 · ";
+  const ringText = "VYAPAAR · MANDATE · HS256 · ";
 
   return (
     <div

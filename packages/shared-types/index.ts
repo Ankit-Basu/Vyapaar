@@ -44,7 +44,7 @@ export const ScoredProductSchema = z.object({
 export type ScoredProduct = z.infer<typeof ScoredProductSchema>;
 
 export const CatalogFeedPageSchema = z.object({
-  schema_version: z.literal("agentmandi.catalog.v1"),
+  schema_version: z.literal("vyapaar.catalog.v1"),
   merchant_id: z.string(),
   merchant_name: z.string(),
   currency: z.literal("INR"),
@@ -114,7 +114,7 @@ export const DecisionSchema = z.object({
   reasons: z.array(z.string()),
   checks: z.array(PolicyCheckSchema),
   evaluated_at: z.string(),
-  policy_version: z.string().default("agentmandi.policy.v1"),
+  policy_version: z.string().default("vyapaar.policy.v1"),
 });
 export type Decision = z.infer<typeof DecisionSchema>;
 
@@ -259,3 +259,148 @@ export const ScenarioSchema = z.object({
   runnable: z.boolean().default(true),
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
+
+// ------------------------------------------------------------------ growth
+//
+// The merchant's side of the counter. A discount is a money action too, so it
+// carries the same shape as a purchase: an ordered gauntlet of checks, each
+// with a reason, and a ledger that holds before it gives.
+
+export const OfferKindSchema = z.enum(["bundle", "volume", "upgrade"]);
+export type OfferKind = z.infer<typeof OfferKindSchema>;
+
+export const OfferStatusSchema = z.enum([
+  "PUBLISHED",
+  "GATED",
+  "SUPPRESSED",
+  "ACCEPTED",
+  "DECLINED",
+  "EXPIRED",
+]);
+export type OfferStatus = z.infer<typeof OfferStatusSchema>;
+
+export const OfferActionSchema = z.enum(["auto_publish", "gate_for_human", "suppress"]);
+export type OfferAction = z.infer<typeof OfferActionSchema>;
+
+export const OfferLineSchema = z.object({
+  product_id: z.string(),
+  title: z.string(),
+  category: z.string(),
+  qty: z.number().int(),
+  unit_price_paise: z.number().int(),
+  line_total_paise: z.number().int(),
+  is_anchor: z.boolean().default(false),
+});
+export type OfferLine = z.infer<typeof OfferLineSchema>;
+
+export const OfferQuoteSchema = z.object({
+  schema_version: z.string().default("vyapaar.offer.v1"),
+  offer_id: z.string(),
+  campaign_id: z.string(),
+  kind: OfferKindSchema,
+  anchor_product_id: z.string(),
+  lines: z.array(OfferLineSchema),
+  list_total_paise: z.number().int(),
+  offer_total_paise: z.number().int(),
+  discount_paise: z.number().int(),
+  discount_bps: z.number().int(),
+  headline: z.string(),
+  rationale: z.string(),
+  disclosure: z.string(),
+  expires_at: z.string(),
+  status: OfferStatusSchema.default("PUBLISHED"),
+});
+export type OfferQuote = z.infer<typeof OfferQuoteSchema>;
+
+export const OfferCheckSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: CheckStatusSchema,
+  reason: z.string(),
+  observed: z.record(z.string(), z.unknown()).default({}),
+});
+export type OfferCheck = z.infer<typeof OfferCheckSchema>;
+
+export const OfferDecisionSchema = z.object({
+  action: OfferActionSchema,
+  reasons: z.array(z.string()),
+  checks: z.array(OfferCheckSchema),
+  evaluated_at: z.string(),
+  policy_version: z.string().default("vyapaar.growth.v1"),
+});
+export type OfferDecision = z.infer<typeof OfferDecisionSchema>;
+
+export const EvaluatedOfferSchema = z.object({
+  offer: OfferQuoteSchema,
+  decision: OfferDecisionSchema,
+  /** Merchant-private: present on merchant views, null on anything agent-facing. */
+  margin_paise: z.number().int().nullable().default(null),
+  margin_bps: z.number().int().nullable().default(null),
+});
+export type EvaluatedOffer = z.infer<typeof EvaluatedOfferSchema>;
+
+export const CampaignSchema = z.object({
+  campaign_id: z.string(),
+  name: z.string(),
+  merchant_id: z.string(),
+  status: z.enum(["ACTIVE", "PAUSED", "ENDED"]).default("ACTIVE"),
+  discount_budget_paise: z.number().int(),
+  discount_spent_paise: z.number().int().default(0),
+  discount_reserved_paise: z.number().int().default(0),
+  max_discount_bps: z.number().int(),
+  floor_margin_bps: z.number().int(),
+  deep_discount_gate_paise: z.number().int(),
+  allowed_categories: z.array(z.string()).default([]),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type Campaign = z.infer<typeof CampaignSchema>;
+
+export const OfferListResponseSchema = z.object({
+  schema_version: z.string().default("vyapaar.offers.v1"),
+  merchant_id: z.string(),
+  anchor_product_id: z.string(),
+  generated_at: z.string(),
+  mandate_aware: z.boolean(),
+  offers: z.array(OfferQuoteSchema),
+  withheld: z.array(z.record(z.string(), z.unknown())).default([]),
+});
+export type OfferListResponse = z.infer<typeof OfferListResponseSchema>;
+
+export const RevenueMetricsSchema = z.object({
+  settled_gmv_paise: z.number().int(),
+  baseline_gmv_paise: z.number().int(),
+  uplift_paise: z.number().int(),
+  uplift_bps: z.number().int(),
+  orders: z.number().int(),
+  aov_paise: z.number().int(),
+  aov_without_offer_paise: z.number().int(),
+  aov_with_offer_paise: z.number().int(),
+  attach_rate_bps: z.number().int(),
+  discount_given_paise: z.number().int(),
+  margin_earned_paise: z.number().int(),
+  offers_published: z.number().int(),
+  offers_accepted: z.number().int(),
+  offers_declined: z.number().int(),
+  offers_suppressed: z.number().int(),
+  offers_gated: z.number().int(),
+  margin_protected_paise: z.number().int(),
+});
+export type RevenueMetrics = z.infer<typeof RevenueMetricsSchema>;
+
+export const RebalanceMoveSchema = z.object({
+  product_id: z.string(),
+  title: z.string(),
+  action: z.enum(["promote", "withdraw", "hold"]),
+  reason: z.string(),
+  observed: z.record(z.string(), z.unknown()).default({}),
+});
+export type RebalanceMove = z.infer<typeof RebalanceMoveSchema>;
+
+export const RebalanceResultSchema = z.object({
+  campaign_id: z.string(),
+  evaluated: z.number().int(),
+  moves: z.array(RebalanceMoveSchema),
+  summary: z.string(),
+});
+export type RebalanceResult = z.infer<typeof RebalanceResultSchema>;

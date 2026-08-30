@@ -1,4 +1,3 @@
-import { MoltenBackground } from "@/components/glass/molten-background";
 import { KineticHero } from "@/components/landing/kinetic-hero";
 import SmoothScroll from "@/components/film/smooth-scroll";
 import { AuditScene } from "@/components/landing/audit-scene";
@@ -8,6 +7,7 @@ import {
   Cta,
   Failure,
   Footer,
+  Growth,
   Mandate,
   Mcp,
   Problem,
@@ -22,14 +22,16 @@ export default function Landing() {
 
         <main className="relative z-10">
           <KineticHero />
+          <StatStrip />
           <Problem />
-        <Mandate />
-        <GuardrailScene />
-        <Failure />
-        <AuditScene />
-        <Mcp />
-        <Cta />
-      </main>
+          <Mandate />
+          <GuardrailScene />
+          <Growth />
+          <Failure />
+          <AuditScene />
+          <Mcp />
+          <Cta />
+        </main>
 
         <Footer />
       </div>

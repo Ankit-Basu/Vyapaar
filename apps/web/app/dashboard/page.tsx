@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPaise } from "@agentmandi/shared-types";
+import { formatPaise } from "@vyapaar/shared-types";
 import {
   Bot,
   Boxes,
@@ -12,6 +12,8 @@ import {
   ListChecks,
   ScrollText,
   ShieldCheck,
+  Tag,
+  TrendingUp,
   UserCheck,
   Wallet,
   type LucideIcon,
@@ -30,6 +32,7 @@ import {
   getHealth,
   getIntents,
   getMandates,
+  getOfferLedger,
   resetDemo,
   type Health,
 } from "@/lib/api";
@@ -37,6 +40,10 @@ import { useAuditStream } from "@/lib/use-audit-stream";
 import { cn } from "@/lib/utils";
 import { MoltenBackground } from "@/components/glass/molten-background";
 import { AgentConsole } from "@/components/agent-console";
+import { CampaignPanel } from "@/components/growth/campaign-panel";
+import { OfferLedger } from "@/components/growth/offer-ledger";
+import { OfferStudio } from "@/components/growth/offer-studio";
+import { RevenueStrip } from "@/components/growth/revenue-strip";
 import { AuditFeed } from "@/components/audit-feed";
 import { DashboardNav, type NavGroup, type ViewId } from "@/components/dashboard-nav";
 import { IntentsPanel } from "@/components/intents-panel";
@@ -69,6 +76,18 @@ const VIEW_META: Record<ViewId, { title: string; accent: string; blurb: string }
     blurb:
       "Scope lives in the token. Spend is tracked server-side, where the holder cannot edit it.",
   },
+  growth: {
+    title: "Revenue",
+    accent: "Growth",
+    blurb:
+      "The merchant's side of the counter. A discount is a money action too, so it clears its own gauntlet.",
+  },
+  offers: {
+    title: "Offer",
+    accent: "Ledger",
+    blurb:
+      "Every offer proposed, published or refused — with the margin guardrail that decided.",
+  },
   audit: {
     title: "Audit",
     accent: "Trail",
@@ -90,12 +109,18 @@ const VIEW_META: Record<ViewId, { title: string; accent: string; blurb: string }
  * out to fix.
  */
 function useSectionCounts(refreshKey: number) {
-  const [counts, setCounts] = useState({ intents: 0, gated: 0, liveMandates: 0 });
+  const [counts, setCounts] = useState({
+    intents: 0,
+    gated: 0,
+    liveMandates: 0,
+    offers: 0,
+    gatedOffers: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getIntents(60), getMandates()])
-      .then(([intents, mandates]) => {
+    Promise.all([getIntents(60), getMandates(), getOfferLedger(60)])
+      .then(([intents, mandates, offers]) => {
         if (cancelled) return;
         const now = new Date();
         setCounts({
@@ -103,6 +128,8 @@ function useSectionCounts(refreshKey: number) {
           gated: intents.filter((i) => i.status === "GATED").length,
           liveMandates: mandates.filter((m) => !m.revoked_at && new Date(m.expires_at) > now)
             .length,
+          offers: offers.length,
+          gatedOffers: offers.filter((o) => o.offer.status === "GATED").length,
         });
       })
       .catch(() => {
@@ -189,6 +216,21 @@ export default function Dashboard() {
         ],
       },
       {
+        heading: "Growing the merchant",
+        items: [
+          { id: "growth", label: "Revenue & campaign", icon: TrendingUp, count: null, tone: "pass" },
+          {
+            id: "offers",
+            label: "Offer ledger",
+            icon: Tag,
+            count: counts.offers,
+            tone: "gate",
+            // Deep discounts wait on a person exactly as gated intents do.
+            urgent: counts.gatedOffers > 0,
+          },
+        ],
+      },
+      {
         heading: "Demo",
         items: [{ id: "scenarios", label: "Scenarios", icon: FlaskConical, count: null }],
       },
@@ -201,11 +243,14 @@ export default function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-7">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} />
+          <OfferStudio onActivity={bump} />
           <IntentsPanel refreshKey={refreshKey} />
           <ScenarioRunner onActivity={bump} />
         </div>
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
+          <RevenueStrip refreshKey={refreshKey} />
           <MandatesPanel refreshKey={refreshKey} />
+          <CampaignPanel refreshKey={refreshKey} onActivity={bump} />
           <AuditFeed events={events} connection={connection} />
         </div>
       </div>
@@ -237,6 +282,29 @@ export default function Dashboard() {
         </div>
         <div className="flex min-w-0 lg:col-span-5">
           <AgentConsole onActivity={bump} refreshKey={refreshKey} className="min-h-[40rem]" />
+        </div>
+      </div>
+    ),
+    growth: (
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-7">
+          <OfferStudio onActivity={bump} />
+          <CampaignPanel refreshKey={refreshKey} onActivity={bump} />
+        </div>
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
+          <RevenueStrip refreshKey={refreshKey} />
+          <AuditFeed events={events} connection={connection} />
+        </div>
+      </div>
+    ),
+    offers: (
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 lg:col-span-7">
+          <OfferLedger refreshKey={refreshKey} onActivity={bump} className="min-h-[44rem]" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
+          <RevenueStrip refreshKey={refreshKey} />
+          <CampaignPanel refreshKey={refreshKey} onActivity={bump} />
         </div>
       </div>
     ),

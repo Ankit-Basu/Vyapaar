@@ -1,6 +1,6 @@
 "use client";
 
-import type { Scenario } from "@agentmandi/shared-types";
+import type { Scenario } from "@vyapaar/shared-types";
 import { ChevronRight, FlaskConical, Loader2, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 

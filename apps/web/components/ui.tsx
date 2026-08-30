@@ -264,7 +264,23 @@ export function CountUp({
 }) {
   const skip = useSkipAnimation();
   const [display, setDisplay] = useState(value);
+  const [settled, setSettled] = useState(value);
   const current = useRef(value);
+
+  // Adjusting state during render, which is the documented pattern for deriving
+  // state from a changed prop.
+  //
+  // It has to happen here rather than in the effect below. While `skip` holds,
+  // the render reads `value` directly and looks correct — but the moment it
+  // clears, the effect's equality check sees ref === value, returns early, and
+  // the stale `display` is what gets shown. A figure that changed while the tab
+  // was in the background would then read zero forever.
+  if (skip && settled !== value) {
+    setSettled(value);
+    setDisplay(value);
+    // The ref is left to the effect below, which runs straight after this render
+    // and syncs it. Writing it here would be a ref mutation during render.
+  }
 
   useEffect(() => {
     // Kept current either way, so resuming — the tab comes forward, or the

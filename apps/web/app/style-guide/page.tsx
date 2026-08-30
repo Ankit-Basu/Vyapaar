@@ -13,7 +13,7 @@ import {
 } from "@/components/studio/studio";
 
 export const metadata: Metadata = {
-  title: "AgentMandi — material",
+  title: "Vyapaar — material",
   description: "The Studio material system: lit graphite, glass, metal and the seal.",
 };
 
@@ -30,7 +30,7 @@ export default function StyleGuide() {
       <Studio />
       <main className="relative mx-auto w-full max-w-5xl px-6 py-24 sm:px-8">
         <header className="mb-20">
-          <p className="st-micro">AgentMandi</p>
+          <p className="st-micro">Vyapaar</p>
           <h1 className="st-display mt-4 text-[clamp(2.5rem,5.5vw,4rem)]">
             Material, before screens.
           </h1>

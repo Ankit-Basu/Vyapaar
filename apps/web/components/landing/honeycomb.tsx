@@ -37,7 +37,7 @@ const CHECKS = [
 const OUTCOMES = {
   approved: {
     label: "auto_approve",
-    blurb: "₹1,299 mouse. All eight pass, and the agent settles on its own authority.",
+    blurb: "₹1,299 mouse. All nine pass, and the agent settles on its own authority.",
     statusAt: () => "pass" as const,
   },
   gated: {

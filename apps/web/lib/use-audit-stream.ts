@@ -1,6 +1,6 @@
 "use client";
 
-import type { AuditEvent } from "@agentmandi/shared-types";
+import type { AuditEvent } from "@vyapaar/shared-types";
 import { useEffect, useRef, useState } from "react";
 
 import { API_BASE } from "@/lib/api";

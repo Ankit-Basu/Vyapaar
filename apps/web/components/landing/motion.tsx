@@ -140,7 +140,7 @@ export function Eyebrow({ index, children }: { index: string; children: ReactNod
     <div className="flex items-center gap-2.5">
       <span className="size-1.5 rounded-full bg-[#ffb77b] shadow-[0_0_8px_#ffb77b]" />
       <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.32em] text-[#ffb77b]">
-        {index} // {children}
+        {index} {"//"} {children}
       </span>
     </div>
   );

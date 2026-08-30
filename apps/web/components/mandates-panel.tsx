@@ -1,6 +1,6 @@
 "use client";
 
-import { availablePaise, formatPaise, type MandateRecord } from "@agentmandi/shared-types";
+import { availablePaise, formatPaise, type MandateRecord } from "@vyapaar/shared-types";
 import { Wallet } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
