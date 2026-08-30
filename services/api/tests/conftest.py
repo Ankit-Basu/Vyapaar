@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-_TMP_DIR = Path(tempfile.mkdtemp(prefix="agentmandi-tests-"))
+_TMP_DIR = Path(tempfile.mkdtemp(prefix="vyapaar-tests-"))
 os.environ["DATABASE_PATH"] = str(_TMP_DIR / "test.db")
 os.environ["MANDATE_JWT_SECRET"] = "test-secret-not-the-default"
 os.environ["RAZORPAY_WEBHOOK_SECRET"] = "test-webhook-secret"
@@ -24,6 +24,8 @@ os.environ["HITL_THRESHOLD_PAISE"] = "500000"
 from app import db  # noqa: E402
 from app.catalog import store as catalog  # noqa: E402
 from app.config import get_settings  # noqa: E402
+from app.growth import campaigns as growth_campaigns  # noqa: E402
+from app.growth import economics as growth_economics  # noqa: E402
 from app.mandate import service as mandates  # noqa: E402
 from app.models import MandateIssueRequest, MandateRecord  # noqa: E402
 
@@ -34,6 +36,11 @@ def clean_db() -> Iterator[None]:
     db.reset_db()
     catalog.invalidate_index()
     catalog.ingest_seed_file()
+    # Unit economics and a live campaign are part of a working merchant, not test
+    # scaffolding: without them the growth agent has nothing to offer and the
+    # offer-attached purchase paths cannot be exercised at all.
+    growth_economics.seed_economics()
+    growth_campaigns.ensure_default_campaign()
     yield
 
 
