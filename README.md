@@ -18,6 +18,12 @@
 
 <br/>
 
+### ▶ **[Open the live control room](https://vyapaar-web.vercel.app/dashboard)**
+
+<sub>Hosted on Render's free tier — if it has been idle it takes about a minute to wake. The demo runs entirely in Razorpay **test mode**.</sub>
+
+<br/>
+
 **[Quickstart](#-quickstart) · [Two gauntlets](#-two-gauntlets-one-shape) · [Demo script](docs/DEMO_FLOW.md) · [Project & challenges](docs/PROJECT.md) · [Video pitch](docs/VIDEO_PITCH.md) · [Deploy](docs/DEPLOY.md)**
 
 </div>
@@ -263,6 +269,14 @@ npm install && npm run dev
 | `http://localhost:3000` | Landing page — the scroll-driven walkthrough |
 | `http://localhost:3000/dashboard` | **Control room** — start here for a demo |
 | `http://127.0.0.1:8000/docs` | Interactive API docs (47 endpoints) |
+
+Or skip all of it and use the deployed instance:
+
+| URL | What |
+|:---|:---|
+| [vyapaar-web.vercel.app/dashboard](https://vyapaar-web.vercel.app/dashboard) | **Live control room** |
+| [vyapaar-api.onrender.com/docs](https://vyapaar-api.onrender.com/docs) | Live API docs |
+| [vyapaar-api.onrender.com/audit/verify](https://vyapaar-api.onrender.com/audit/verify) | Verify the live audit chain |
 
 Then follow **[docs/DEMO_FLOW.md](docs/DEMO_FLOW.md)**, which walks the whole product in about six minutes.
 
