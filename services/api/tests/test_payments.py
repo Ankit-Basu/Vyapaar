@@ -269,3 +269,33 @@ def test_irrelevant_event_types_are_ignored(mandate_token):
     result = payments.handle_webhook(raw_body=raw, signature=signature)
     assert result["status"] == "ignored"
     assert intents.get_intent(intent.intent.intent_id).status == IntentStatus.APPROVED
+
+
+def test_the_checkout_link_points_at_wherever_the_service_actually_is(monkeypatch):
+    """A deployed API must not hand out a localhost checkout URL.
+
+    The simulated gateway builds its checkout link from `public_base_url`, and
+    that link is handed to a buying agent or opened from the dashboard. Left at
+    the localhost default on a host, the deployed service cheerfully returns a
+    URL that only resolves on a machine nobody is using — which is exactly what
+    happened the first time this was deployed.
+
+    Render injects `RENDER_EXTERNAL_URL`, so the deployed case has to be correct
+    with no configuration at all.
+    """
+    from app.config import _default_public_base_url
+
+    monkeypatch.delenv("RENDER_EXTERNAL_URL", raising=False)
+    assert _default_public_base_url() == "http://127.0.0.1:8000"
+
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://vyapaar-api.onrender.com")
+    assert _default_public_base_url() == "https://vyapaar-api.onrender.com"
+
+
+def test_an_explicit_public_base_url_still_wins(monkeypatch):
+    """Tunnels and other hosts set it directly; that must beat any host default."""
+    from app.config import Settings
+
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://ignored.onrender.com")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://tunnel.example.com")
+    assert Settings().public_base_url == "https://tunnel.example.com"

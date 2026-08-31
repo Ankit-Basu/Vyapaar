@@ -6,6 +6,7 @@ see `.env.example` at the repo root for the full list.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -15,6 +16,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
+
+def _default_public_base_url() -> str:
+    """Where this service is reachable from the outside.
+
+    It matters because the simulated gateway builds its checkout link from it,
+    and that link is handed to an agent or opened from the dashboard. Left at the
+    localhost default on a host, the deployed API cheerfully returns a URL that
+    only resolves on the machine nobody is using.
+
+    `RENDER_EXTERNAL_URL` is injected by Render, so the deployed case is correct
+    with no configuration. An explicit `PUBLIC_BASE_URL` still wins, which is
+    what other hosts and tunnels set.
+    """
+    return os.environ.get("RENDER_EXTERNAL_URL") or "http://127.0.0.1:8000"
+
 
 PaymentsMode = Literal["auto", "live", "simulated"]
 EmbeddingsBackend = Literal["hashing", "sentence-transformers"]
@@ -33,7 +49,9 @@ class Settings(BaseSettings):
     environment: str = Field(default="local", alias="VYAPAAR_ENV")
     api_host: str = Field(default="127.0.0.1", alias="API_HOST")
     api_port: int = Field(default=8000, alias="API_PORT")
-    public_base_url: str = Field(default="http://127.0.0.1:8000", alias="PUBLIC_BASE_URL")
+    public_base_url: str = Field(
+        default_factory=_default_public_base_url, alias="PUBLIC_BASE_URL"
+    )
     web_base_url: str = Field(default="http://localhost:3000", alias="WEB_BASE_URL")
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
