@@ -49,12 +49,88 @@ adds latency to every click after that, which makes a good product look sluggish
 on camera. Film locally, and spend five seconds proving it is deployed (see the
 cold open).
 
+- [ ] **Check which port Next actually chose.** It prints the URL on start-up. If
+      something else already holds 3000 — Grafana, another project, a stale server —
+      Next silently falls through to **3001**, and the browser will show *"API
+      unreachable"* because the API is allowing a different origin. Both ports are
+      allowed by default now, but open the URL Next printed, not the one you
+      assumed.
 - [ ] Browser at **1440×900 or wider** (below `lg` the layout stacks and reads badly).
 - [ ] **Reset demo** in the dashboard rail. Chain must be empty; header must say **chain intact**.
 - [ ] Run through once without recording. The offer studio needs a real round-trip and you want to know its timing.
 - [ ] Close every other tab. The tab strip is on camera and the `[₹]` favicon is a nice touch.
 - [ ] **Leave `PAYMENTS_MODE=simulated` for the recording.** With real keys the simulator disables itself and settlement waits on a webhook Razorpay cannot reach on `localhost` — intents would sit at `AWAITING_PAYMENT` and the demo would stall. The simulator signs its webhooks with the same HMAC-SHA256 the real one does, so the verification path is genuinely exercised either way.
 - [ ] *Optional, for a separate 10-second cut:* with test keys set and `PAYMENTS_MODE=live`, create one order and show it land in the Razorpay test dashboard. Real `order_*` ids on camera are worth more than any slide. Then switch back to `simulated` before recording the main flow.
+
+---
+
+## The dashboard, panel by panel
+
+You are going to be talking over this for two and a half minutes, so it is worth
+knowing what every box on screen is before you start. Nothing here needs to be
+said out loud — this is so you are never hunting for a click on camera.
+
+### The rail, left
+
+The grouping is the argument. Read top to bottom it tells the whole story, and
+saying the group headings out loud is a free way to sound organised:
+
+| Group | Views | What it is |
+|:---|:---|:---|
+| **Main** | Overview · Audit trail | Two ways of seeing the whole room |
+| **The path of a rupee** | Mandates · Buyer agent · Purchase intents | The three stages money passes through, in order |
+| **Growing the merchant** | Revenue & campaign · Offer ledger | The sell side — the half nobody else built |
+| **Demo** | Scenarios | Eleven scripted runs against the real services |
+
+The numbers on the right of each row are live counts, so you never go blind to a
+section you are not looking at. **Purchase intents** and **Offer ledger** pulse
+when something is genuinely waiting on a human.
+
+At the bottom: **Reset demo** (wipes state, re-seeds the catalog, empties the
+chain) and the merchant card — *Kirana Labs*, with a live/offline dot.
+
+### The header
+
+- **Date · streaming** — `streaming` means the SSE connection to the API is open.
+  If it says `connecting` or `API unreachable`, stop and fix it before recording.
+- **chain intact**, top right — the audit chain verifies. This is a verdict on
+  the whole room, which is why it sits apart from everything else.
+- **The four chips** — `payments: local simulator` · `planner` · `human gate:
+  ₹5,000` · `catalog: 33 products`. Worth one sentence when you first arrive:
+  *"the human gate is set at ₹5,000, and that number matters in a minute."*
+
+### The telemetry strip
+
+Five tiles under the header, live off the audit stream:
+
+**Settled** (money confirmed by webhook) · **Decisions** (auto / gated / denied)
+· **Guardrails** (checks run, with a pass ring) · **Activity** (events per minute)
+· **Chain** (entries, and the head hash).
+
+### The panels
+
+| Panel | Where | What to point at |
+|:---|:---|:---|
+| **Buyer agent** | Overview, Buyer agent | Grant a mandate, type a goal, watch the transcript stream step by step |
+| **Offer** *(the studio)* | Overview, Revenue & campaign | Product picker, three authority levels, **Ask the merchant for offers** |
+| **Revenue** | Overview, Revenue & campaign | Uplift, AOV with vs without, attach rate, **margin protected** |
+| **Campaign** | Overview, Revenue & campaign | Discount given / held / left, the three bounds, **Rebalance** |
+| **Mandates** | Overview, Mandates | Budget meter — spent solid, held shimmering, remaining |
+| **Purchase intents** | Overview, Purchase intents | Expand any row for all nine checks with reasons |
+| **Offer ledger** | Offer ledger | Every offer including refused ones; expand for the margin gauntlet; approve a gated discount |
+| **Audit feed** | everywhere | Live hash-chained rows, filterable by event type |
+| **Scenarios** | Overview, Scenarios | Eleven one-click runs |
+
+### The three views you actually need
+
+Do not visit all eight on camera. Three carry the whole demo:
+
+1. **Overview** — establish the room, grant the mandate, run the agent
+2. **Revenue & campaign** — the offer studio and the money. Spend the most time here
+3. **Audit trail** — the receipt, to close
+
+Dip into **Purchase intents** once to expand the nine checks, and **Scenarios**
+once for the failure. That is it.
 
 ---
 
@@ -94,7 +170,12 @@ cold open).
 
 **Screen:** dashboard **Overview**.
 
-> "One merchant on Razorpay test mode. Left column is the buy side. Right column is the merchant's own growth agent."
+*Before clicking anything, take four seconds on the rail and the header.*
+
+> "One merchant on Razorpay test mode. The rail is the whole system in order — the
+> path of a rupee down the middle, the merchant's own growth agent below it. Top
+> right says the audit chain verifies, and the human gate is set at ₹5,000. Hold
+> on to that number."
 
 **Click:** *Grant a mandate — ₹3,000 per purchase, ₹10,000 total.*
 
@@ -106,7 +187,9 @@ cold open).
 
 > "It searches the machine-readable catalog, picks the cheapest match, and states why."
 
-**Pause on `purchase_intent`.** Expand the intent in **Purchase intents**.
+**Pause on `purchase_intent`.** Then go to **Purchase intents** in the rail and
+click the row to expand it. *This is the explainability shot — hold it long enough
+to read two or three of the reasons on camera.*
 
 > "Nine guardrails, each with a reason. And notice check four — the intent API does not *accept* an amount at all. You send a product id and a quantity, and the server prices it. There is no field for an agent to lie in."
 

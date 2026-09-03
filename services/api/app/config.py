@@ -53,7 +53,14 @@ class Settings(BaseSettings):
         default_factory=_default_public_base_url, alias="PUBLIC_BASE_URL"
     )
     web_base_url: str = Field(default="http://localhost:3000", alias="WEB_BASE_URL")
-    cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
+    # Next falls through to 3001+ when 3000 is already taken, which is common on a
+    # dev machine. Allowing both by default stops that showing up as "API
+    # unreachable" in every panel, which reads as the API being down when it is
+    # fine and only the origin moved.
+    cors_origins: str = Field(
+        default="http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
+        alias="CORS_ORIGINS",
+    )
 
     # --- persistence ---
     database_path: str = Field(default=str(REPO_ROOT / "data" / "vyapaar.db"), alias="DATABASE_PATH")
