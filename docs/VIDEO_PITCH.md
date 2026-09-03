@@ -4,6 +4,33 @@ A **3:30** cut, shot in order, with everything you say written out. There is a 9
 
 > **The one idea to land.** Everyone else is building one half of Track 01 — either a safe agent buyer or an upsell bot. Vyapaar is the only one where *both* sides of the counter are bounded by the same machinery, and the single most memorable moment is the merchant **refusing to make an offer** because the buyer's mandate would not allow it. Make sure that lands. Everything else is support.
 
+
+---
+
+## Does this cover the brief?
+
+Track 01 asks for two things and sets one bar. Every line of the brief, and the
+beat that answers it:
+
+| The brief says | Where the video answers it |
+|:---|:---|
+| *"Grow the merchant's revenue"* | **1:10–2:40** — the offer studio, then the Revenue panel: uplift measured against a recorded counterfactual |
+| *"…make them sellable to AI buyers"* | **0:35–1:10** — an outside agent discovers, prices and buys end to end |
+| *"on Razorpay test-mode APIs"* | **0:35–1:10** — a real `order_*` opens; the config refuses any key that is not `rzp_test_` |
+| Example: *agent-readable catalog* | **0:35** — the agent searches a machine-readable feed; integer paise, typed attributes, no prose to parse |
+| Example: *upsell & cross-sell agent* | **1:10–2:10** — bundle, volume tier and upgrade, each with a stated rationale |
+| Example: *campaign orchestrator* | **2:10–2:40** — the campaign meter, its three bounds, and **Rebalance** |
+| **The bar:** *every money action explainable* | Every check read out loud with its reason, on both sides |
+| **The bar:** *bounded* | The mandate caps the buyer; the campaign caps the merchant |
+| **The bar:** *gated* | ₹5,000 human gate on a purchase; ₹800 human gate on a discount |
+| **The bar:** *show the audit trail* | **3:10–3:30** — one chain, both sides, then `/audit/verify` in the terminal |
+| **The bar:** *one failure handled gracefully* | **2:40–3:10** — **Card declined**: intent FAILED, budget hold released |
+
+The one example direction deliberately **not** built is *conversational in-app
+checkout* — Razorpay's own pilots already do that, and it is the half of the
+problem that only helps people who already opened the merchant's app. Say so if
+asked; it is a choice, not a gap.
+
 ---
 
 ## Before you record
@@ -15,6 +42,12 @@ cd services/api && python -m uvicorn app.main:app --port 8000
 # terminal 2
 npm run dev
 ```
+
+**Record against localhost, not the deployed site.** The live URL is real and you
+should show it — but Render's free instance cold-starts in about 30 seconds and
+adds latency to every click after that, which makes a good product look sluggish
+on camera. Film locally, and spend five seconds proving it is deployed (see the
+cold open).
 
 - [ ] Browser at **1440×900 or wider** (below `lg` the layout stacks and reads badly).
 - [ ] **Reset demo** in the dashboard rail. Chain must be empty; header must say **chain intact**.
@@ -31,11 +64,17 @@ npm run dev
 
 **Screen:** `localhost:3000`. Scroll slowly from the hero through the stat strip.
 
+> **Optional 5-second proof, worth including.** Before you cut to localhost, have
+> `https://vyapaar-web.vercel.app/dashboard` open in a second tab and show it for
+> a beat: *"this is running live, and the link is in the README."* Then switch to
+> localhost for the rest so nothing lags. Judges discount things they cannot
+> reach; five seconds buys that off cheaply.
+
 > "Razorpay's own pilots already put conversational checkout inside a merchant's app. Track 01 asks for something harder — make a merchant sellable to AI buyers, *and* grow that merchant's revenue.
 >
 > Most answers pick one. This is Vyapaar, and it does both — because they turn out to be the same problem pointed in opposite directions."
 
-**Land on the stat strip:** `9 + 9 guardrails · 176 tests · SHA-256 · 0 rupees at risk`.
+**Land on the stat strip:** `9 + 9 guardrails · 178 tests · SHA-256 · 0 rupees at risk`.
 
 ---
 
@@ -145,6 +184,13 @@ npm run dev
 curl -s http://127.0.0.1:8000/audit/verify
 ```
 
+*If you kept the live tab open, this is a nice place to run the same command
+against it — same output, from a URL anyone can hit:*
+
+```bash
+curl -s https://vyapaar-api.onrender.com/audit/verify
+```
+
 > "Each row hashes the previous hash plus its own canonical JSON — and it's append-only at the *database* level. SQLite triggers physically abort any UPDATE or DELETE. Not a convention in application code."
 
 **Final line, over the dashboard:**
@@ -200,4 +246,5 @@ Keep going and narrate it. *"That's the guardrail doing its job"* is true surpri
 | *"Could the agent overspend?"* | It can't even name a price — the intent API has no amount field. And the budget test is in the SQL `WHERE` clause, so two agents racing for the last rupee can't both win. |
 | *"What if the buyer's LLM is jailbroken?"* | The buyer agent is treated as untrusted. It has no path to the payment service that doesn't pass `POST /intents` first, and the policy engine is a pure function that never sees a prompt. |
 | *"Is the audit chain real, or just hashes in a table?"* | Both — and the database enforces it. SQLite triggers abort UPDATE and DELETE on the audit table. Edit a row directly and `/audit/verify` names the exact sequence number where the chain breaks. |
+| *"Is it actually deployed?"* | Yes — `vyapaar-web.vercel.app`, API on Render, both on free tiers. The container preserves the repo's path depth because `config.py` resolves the root as `parents[3]`; flatten it and the catalog seed goes missing at boot. |
 | *"Why SQLite?"* | So it reproduces on your machine with no cold start and no keys. The schema is plain SQL you can read, and the append-only guarantee is stronger than it would be in an ORM. |

@@ -13,7 +13,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Test_Mode-072654?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com)
 [![MCP](https://img.shields.io/badge/MCP-8_tools-E8710A?style=for-the-badge)](https://modelcontextprotocol.io)
-[![Tests](https://img.shields.io/badge/tests-176_passing-34d399?style=for-the-badge)](#-test-suite)
+[![Tests](https://img.shields.io/badge/tests-178_passing-34d399?style=for-the-badge)](#-test-suite)
 [![License](https://img.shields.io/badge/License-MIT-A855F7?style=for-the-badge)](LICENSE)
 
 <br/>
@@ -309,7 +309,7 @@ To put it somewhere a judge can click instead, see **[docs/DEPLOY.md](docs/DEPLO
 cd services/api && python -m pytest -q
 ```
 
-**176 tests**, all passing.
+**178 tests**, all passing.
 
 | File | Tests | Covers |
 |:---|---:|:---|

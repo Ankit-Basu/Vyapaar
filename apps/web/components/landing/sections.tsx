@@ -31,7 +31,7 @@ import { Mark } from "@/components/brand";
  */
 const STATS: { value: string; label: string; detail: string }[] = [
   { value: "9 + 9", label: "guardrails", detail: "one gauntlet each way across the counter" },
-  { value: "176", label: "tests", detail: "every check covered in isolation" },
+  { value: "178", label: "tests", detail: "every check covered in isolation" },
   { value: "SHA-256", label: "audit chain", detail: "append-only, enforced by the database" },
   { value: "0", label: "rupees at risk", detail: "test mode, and the config refuses live keys" },
 ];

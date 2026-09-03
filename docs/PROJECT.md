@@ -69,7 +69,7 @@ We deliberately did **not** build: crypto rails (x402, MPP), an implementation o
 | **Live streaming** | Server-Sent Events push each new block to the control room with auto-reconnect. |
 | **Control room** | Eight views. Offer studio, offer ledger with the full gauntlet per offer, campaign meter, revenue attribution, budget meters, intent ledger, live chain, scenario runner. |
 | **11 scripted scenarios** | One click each, against the real services. Seven buy-side, four sell-side. Five of them are failures. |
-| **176 tests** | Every check in isolation, both ledgers, webhook verification, chain integrity, agent recovery, and the architectural invariants. |
+| **178 tests** | Every check in isolation, both ledgers, webhook verification, chain integrity, agent recovery, and the architectural invariants. |
 
 ---
 
