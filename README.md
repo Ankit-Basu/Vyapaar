@@ -90,6 +90,232 @@ Both engines are **pure functions** — no database, no network. That is what ma
 **`buyer_bounds` — the merchant refuses to oversell a mandate.** Present a mandate to `GET /growth/offers` and offers are fitted to what that buyer may actually spend. An upsell above the per-transaction cap is not blocked at checkout — **it is never made.** Pushing an agent at a purchase its principal forbade only manufactures a denial.
 
 <br/>
+<br/>
+
+---
+
+## 🏛️ System design
+
+### Architecture
+
+Two symmetric halves over one shared spine. The buy side bounds what an agent may spend; the sell side bounds what the merchant may give away. Neither can reach the payment service without passing its own engine first.
+
+```mermaid
+flowchart TB
+    A["AI buyer agent<br/>MCP client · or plain HTTP"]
+
+    subgraph S[" Sell side · what a merchant may give away "]
+        direction LR
+        S1["offer builder<br/>cannot see cost"] --> S2["margin engine<br/>9 checks · pure"] --> S3["campaign<br/>discount ledger"]
+    end
+
+    subgraph B[" Buy side · what an agent may spend "]
+        direction LR
+        B1["catalog<br/>ACP feed · search"] --> B2["mandate<br/>budget ledger"] --> B3["policy engine<br/>9 checks · pure"]
+    end
+
+    P["payments<br/>orders · HMAC-verified webhooks"]
+    R["Razorpay · test mode"]
+    L["audit chain<br/>SHA-256 · append-only"]
+    D["Control room · live via SSE"]
+
+    A -->|asks for offers| S1
+    A -->|discovers| B1
+    S3 -->|offer_id| B3
+    B3 -->|auto_approve only| P
+    P <--> R
+    S2 -.-> L
+    B3 -.-> L
+    P -.-> L
+    L --> D
+```
+
+The one invariant worth stating on its own: **`growth/offers.py` never imports `growth/economics.py`.** The builder proposes the most persuasive offer the campaign's published ceiling allows; only the engine sees cost and decides what the merchant can afford. If the builder could see the floor it would quietly clamp to it, and the floor would never visibly fire. A test reads the engine's own source and fails if it ever reaches for a database or an HTTP client.
+
+<br/>
+
+### The path of one purchase
+
+Discovery through settlement, including the two refusals that make the demo.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Buyer agent
+    participant G as Growth service
+    participant E as Margin gauntlet
+    participant P as Policy gauntlet
+    participant Y as Payments
+    participant R as Razorpay
+    participant L as Audit chain
+
+    A->>G: GET /catalog/search
+    G-->>A: products · integer paise · typed attrs
+
+    A->>G: GET /growth/offers (+ mandate)
+    G->>E: 3 drafts · builder has no cost data
+    E->>E: 9 checks · margin, budget, buyer bounds
+    E-->>G: 2 published · 1 suppressed
+    G->>L: offer.published × 2 · offer.suppressed
+    G-->>A: offers + withheld, each with a reason
+
+    Note over A: Declines the bundle.<br/>Asked for a mouse, no authority to buy earphones.
+    A->>G: POST /growth/offers/{id}/decline
+    G->>L: offer.declined · discount hold released
+
+    A->>P: POST /intents (mandate, product, offer_id)
+    P->>P: 9 checks · offer re-priced server-side
+    P->>L: intent.created · policy.decision
+    P-->>A: auto_approve · budget reserved
+
+    A->>Y: POST /intents/confirm
+    Y->>R: create order + payment link
+    R-->>Y: order_* · plink_*
+    Y-->>A: checkout_url
+
+    R->>Y: webhook · HMAC-SHA256 over raw body
+    Y->>Y: verify signature, else reject
+    Y->>L: payment.webhook_verified · intent.paid
+    Note over Y: Only here does money settle:<br/>mandate spend, campaign discount, stock.
+```
+
+<br/>
+
+### State machines
+
+An intent and an offer both hold money before they consume it, and both can end without consuming any.
+
+**Purchase intent**
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> APPROVED: all 9 pass
+    PENDING --> GATED: ≥ ₹5,000
+    PENDING --> DENIED: a check fails
+    GATED --> APPROVED: human approves<br/>re-runs every check
+    GATED --> DENIED: human rejects
+    APPROVED --> PAID: signed webhook
+    APPROVED --> FAILED: card declined
+    APPROVED --> EXPIRED: hold times out
+    PAID --> [*]
+    DENIED --> [*]
+    FAILED --> [*]
+    EXPIRED --> [*]
+```
+
+Budget is **reserved** at `APPROVED` and `GATED`, **settled** at `PAID`, and **released** at `FAILED`, `DENIED` and `EXPIRED`.
+
+**Merchant offer** — the same shape, pointed the other way.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PUBLISHED: all 9 pass
+    [*] --> GATED: discount ≥ ₹800
+    [*] --> SUPPRESSED: a check fails
+    GATED --> PUBLISHED: human approves<br/>re-runs every check
+    GATED --> SUPPRESSED: human rejects
+    PUBLISHED --> ACCEPTED: buyer takes it
+    PUBLISHED --> DECLINED: buyer passes
+    PUBLISHED --> EXPIRED: 15 min TTL
+    ACCEPTED --> [*]
+    SUPPRESSED --> [*]
+    DECLINED --> [*]
+    EXPIRED --> [*]
+```
+
+Discount is **reserved** at `PUBLISHED` and `GATED`, **settled** when the intent pays, and **released** at `DECLINED`, `SUPPRESSED` and `EXPIRED`.
+
+> A suppressed offer holds **no** budget at all, which is what makes `margin_protected` a number rather than a slogan: it sums discount the gauntlet refused to reserve in the first place.
+
+<br/>
+
+### Data model
+
+Nine tables. Cost price lives in its own, deliberately absent from the `Product` model and from every agent-facing route.
+
+```mermaid
+erDiagram
+    PRODUCT ||--o| PRODUCT_ECONOMICS : "cost, merchant-private"
+    PRODUCT ||--o{ PURCHASE_INTENT : "anchors"
+    MANDATE ||--o{ PURCHASE_INTENT : "authorises"
+    CAMPAIGN ||--o{ OFFER : "funds"
+    OFFER ||--o| PURCHASE_INTENT : "prices"
+    PURCHASE_INTENT ||--o| PAYMENT : "settles via"
+    PAYMENT ||--o{ WEBHOOK_EVENT : "verified by"
+
+    PRODUCT {
+        text id PK
+        int price_paise
+        int stock
+        json attributes
+    }
+    PRODUCT_ECONOMICS {
+        text product_id PK
+        int cost_paise "never agent-facing"
+    }
+    MANDATE {
+        text mandate_id PK
+        int per_txn_cap_paise
+        int total_budget_paise
+        int spent_paise "server-side only"
+        int reserved_paise
+    }
+    CAMPAIGN {
+        text campaign_id PK
+        int discount_budget_paise
+        int discount_spent_paise
+        int discount_reserved_paise
+        int floor_margin_bps
+    }
+    OFFER {
+        text offer_id PK
+        text status
+        int discount_paise
+        int baseline_paise "the counterfactual"
+        json decision "the 9 checks"
+    }
+    PURCHASE_INTENT {
+        text intent_id PK
+        text status
+        int amount_paise
+        int discount_paise
+        json decision "the 9 checks"
+    }
+    PAYMENT {
+        text payment_id PK
+        text rzp_order_id
+        text status
+    }
+    AUDIT_LOG {
+        int seq PK
+        text prev_hash
+        text hash "SHA-256 chain"
+    }
+```
+
+`AUDIT_LOG` deliberately has no foreign keys. It is an append-only record of what happened, not a relation to be joined against, and SQLite triggers abort every `UPDATE` and `DELETE` against it.
+
+<br/>
+
+### Request layering
+
+Every write follows the same four steps, which is why both sides can share one shape.
+
+```
+  router/           HTTP shape only. Parses, delegates, maps domain errors to codes.
+     ↓              No business rules live here.
+  service/          Orchestration. Opens a transaction, assembles context,
+     ↓              calls the engine, writes the ledger and the audit row together.
+  engine.py         Pure function. Context in, decision out. No DB, no network,
+     ↓              no clock beyond a timestamp. Every check testable in isolation.
+  db.py             BEGIN IMMEDIATE. Availability tests live in the SQL WHERE
+                    clause, so two racing agents cannot both win.
+```
+
+The engine being pure is what makes every decision reproducible from its audit payload alone: given the same context, it returns the same nine checks with the same reasons, forever.
+
+<br/>
 
 ---
 
