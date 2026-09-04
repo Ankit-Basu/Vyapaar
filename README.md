@@ -24,7 +24,7 @@
 
 <br/>
 
-**[Quickstart](#-quickstart) · [Two gauntlets](#-two-gauntlets-one-shape) · [Demo script](docs/DEMO_FLOW.md) · [Project & challenges](docs/PROJECT.md) · [Video pitch](docs/VIDEO_PITCH.md) · [Deploy](docs/DEPLOY.md)**
+**[Quickstart](#-quickstart) · [Two gauntlets](#-two-gauntlets-one-shape) · [Demo script](docs/DEMO_FLOW.md) · [Project & challenges](docs/PROJECT.md) · [Deploy](docs/DEPLOY.md)**
 
 </div>
 
@@ -371,7 +371,6 @@ Vyapaar/
 └── docs/
     ├── DEMO_FLOW.md                How to run and narrate the whole product
     ├── PROJECT.md                  Objectives, features, obstacles hit
-    ├── VIDEO_PITCH.md              Shot-by-shot script for the demo video
     └── DEPLOY.md                   Render + Vercel, in the order that works
 ```
 
