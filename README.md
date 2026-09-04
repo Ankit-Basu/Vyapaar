@@ -20,7 +20,7 @@
 
 ### ▶ **[Open the live control room](https://vyapaar-web.vercel.app/dashboard)**
 
-<sub>Hosted on Render's free tier — if it has been idle it takes about a minute to wake. The demo runs entirely in Razorpay **test mode**.</sub>
+<sub>Runs entirely in Razorpay **test mode**. [`config.py`](services/api/app/config.py) refuses any key that is not `rzp_test_*`, so this cannot be pointed at real money.</sub>
 
 <br/>
 
@@ -397,16 +397,16 @@ Campaign bounds — discount budget, margin floor, human gate — are runtime st
 
 ---
 
-## 📐 What this is not
+## 📐 Scope and design decisions
 
-| ❌ | |
+| | |
 |:---|:---|
-| **Not crypto rails** | No x402, no MPP. Settles in INR via Razorpay |
-| **Not NPCI's UAP** | UAP is not live. Its *pattern* — one-time human consent, per-merchant limits — is implemented as our own signed mandate, with no dependency on the unreleased protocol |
-| **Not handling real money** | Test mode only, enforced in config |
-| **Not a chat widget** | A protocol layer, not a conversational UI inside a merchant app |
+| **Sovereign fiat, not crypto** | No x402, no MPP. Settles in INR through Razorpay, on the rails Indian merchants already use |
+| **UAP's pattern, not its wire format** | UAP is not live yet. One-time human consent and per-merchant limits are implemented as a signed mandate, so nothing here depends on an unreleased protocol. When it ships, `mandate/` is the only module that changes |
+| **Test mode, enforced in code** | [`config.py`](services/api/app/config.py) refuses any key that is not `rzp_test_*`. The safety property is structural, not a promise |
+| **A protocol layer, not a chat widget** | Conversational checkout inside a merchant's app already exists. This is the half that does not: the agent that has never heard of you |
 
-Two deliberate substitutions, both so the demo reproduces on any machine with no network and no keys: **SQLite** instead of Postgres + pgvector (vectors as blobs, cosine in numpy — behaviourally identical on 33 items), and a **deterministic hashing embedder** instead of `sentence-transformers` (no 2 GB torch download, identical vectors on every machine; one env var switches it).
+Two engineering decisions keep the whole demo reproducible on any machine, with no network and no keys. **SQLite** instead of Postgres + pgvector: vectors stored as blobs and compared with cosine in numpy, behaviourally identical across a 33-item catalog, and the append-only guarantee ends up *stronger* because database triggers enforce it. A **deterministic hashing embedder** instead of `sentence-transformers`: no 2 GB download, identical vectors on every machine, and one env var switches to `all-MiniLM-L6-v2` with no other change.
 
 <br/>
 
@@ -420,6 +420,8 @@ Two deliberate substitutions, both so the demo reproduces on any machine with no
 
 *Both sides bounded. Every refusal recorded. One chain.*
 
-**MIT**
+<br/>
+
+**MIT licensed**
 
 </div>
